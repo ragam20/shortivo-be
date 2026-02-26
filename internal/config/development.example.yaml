@@ -1,0 +1,19 @@
+app:
+  env: development
+  version: 0.0.1
+  port: 8000
+
+database:
+  host:
+  port:
+  password:
+  name: shortivo_dev
+
+jwt:
+  access_secret:
+  expiration:
+
+redis:
+  host:
+  port:
+  password:
