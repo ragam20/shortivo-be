@@ -66,7 +66,7 @@ func main() {
 			auth.NewJWTConfig,
 			auth.NewJWTManager,
 
-			middleware.NewAccesTokenMiddleware,
+			middleware.NewAccessTokenMiddleware,
 
 			oauth.NewGoogleOAuthConfig,
 			oauth.NewGoogleOAuth,

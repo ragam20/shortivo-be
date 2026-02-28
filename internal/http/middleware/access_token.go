@@ -14,7 +14,11 @@ type AccessTokenMiddleware struct {
 	jwtManager auth.JwtManager
 }
 
-func NewAccesTokenMiddleware(jwtManager auth.JwtManager) gin.HandlerFunc {
+func NewAccessTokenMiddleware(jwtManager auth.JwtManager) *AccessTokenMiddleware {
+	return &AccessTokenMiddleware{jwtManager: jwtManager}
+}
+
+func (m *AccessTokenMiddleware) Handle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		bearer := c.GetHeader(constant.Authorization)
 		if bearer == "" {
@@ -28,7 +32,7 @@ func NewAccesTokenMiddleware(jwtManager auth.JwtManager) gin.HandlerFunc {
 			return
 		}
 
-		jwtUser, err := jwtManager.ValidateAccessToken(s[1])
+		jwtUser, err := m.jwtManager.ValidateAccessToken(s[1])
 		if err != nil {
 			c.AbortWithError(http.StatusUnauthorized, response.Unauthorized())
 			return

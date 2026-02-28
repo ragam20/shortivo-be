@@ -2,12 +2,14 @@ package router
 
 import (
 	"shortivo/internal/http/handler"
+	"shortivo/internal/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewRoutes(
 	g *gin.Engine,
+	accessTokenMiddleware *middleware.AccessTokenMiddleware,
 	authHandler *handler.AuthHandler,
 	accountHandler *handler.AccountHandler,
 	linkHandler *handler.LinkHandler,
