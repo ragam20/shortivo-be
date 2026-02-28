@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"shortivo/internal/app/auth"
+	"time"
+)
 
 type RefreshTokenEntity struct {
 	ID        int64      `gorm:"primaryKey;autoIncrement:false"`
@@ -15,4 +18,30 @@ type RefreshTokenEntity struct {
 
 	UpdatedAt time.Time
 	CreatedAt time.Time
+}
+
+func ToEntity(refToken auth.RefreshToken) RefreshTokenEntity {
+	return RefreshTokenEntity{
+		ID:        refToken.ID,
+		UserID:    refToken.UserID,
+		TokenHash: refToken.TokenHash,
+		IpAddress: refToken.IpAddress,
+		UserAgent: refToken.UserAgent,
+		ExpiredAt: refToken.ExpiredAt,
+		Revoked:   refToken.Revoked,
+		RevokedAt: refToken.RevokedAt,
+	}
+}
+
+func (e RefreshTokenEntity) ToDomain() auth.RefreshToken {
+	return auth.RefreshToken{
+		ID:        e.ID,
+		UserID:    e.UserID,
+		TokenHash: e.TokenHash,
+		IpAddress: e.IpAddress,
+		UserAgent: e.UserAgent,
+		ExpiredAt: e.ExpiredAt,
+		Revoked:   e.Revoked,
+		RevokedAt: e.RevokedAt,
+	}
 }

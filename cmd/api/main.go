@@ -10,23 +10,54 @@ import (
 	"shortivo/internal/cache"
 	"shortivo/internal/config"
 	"shortivo/internal/database"
-	dbRepo "shortivo/internal/database/repo"
+	"shortivo/internal/database/repo"
+	appHttp "shortivo/internal/http"
+	"shortivo/internal/http/handler"
+	"shortivo/internal/http/middleware"
+	"shortivo/internal/http/router"
 	"shortivo/internal/http/server"
+	"shortivo/internal/idgen"
 	"shortivo/internal/logger"
 
 	"go.uber.org/fx"
 )
 
 func main() {
+	var configModule = fx.Module("config",
+		fx.Provide(
+			config.NewEnv,
+			config.NewConfig,
+		),
+	)
+
 	var databaseModule = fx.Module("database",
 		fx.Provide(
 			database.NewDatabaseConfig,
 			database.NewPostgresConnection,
-			dbRepo.NewAuthRepository,
-			dbRepo.NewAccountRepository,
-			dbRepo.NewLinkRepository,
-			dbRepo.NewSubscriptionRepository,
-			dbRepo.NewAnalyticsRepository,
+		),
+	)
+
+	var infraModule = fx.Module("infra",
+		fx.Provide(
+			idgen.NewSnowflakeGen,
+			logger.NewLogger,
+			cache.NewRedisConfig,
+			cache.NewRedisClient,
+			cache.NewStore,
+		),
+	)
+
+	var appHttpModule = fx.Module("apphttp",
+		fx.Provide(
+			server.NewAppConfig,
+			middleware.NewRequestTimeoutMiddleware,
+			middleware.NewErrorMiddleware,
+			server.NewGinEngine,
+			server.NewHTTPServer,
+			appHttp.NewCookieManager,
+		),
+		fx.Invoke(
+			router.NewRoutes,
 		),
 	)
 
@@ -34,45 +65,56 @@ func main() {
 		fx.Provide(
 			auth.NewJWTConfig,
 			auth.NewJWTManager,
+
+			middleware.NewAccesTokenMiddleware,
+
 			oauth.NewGoogleOAuthConfig,
 			oauth.NewGoogleOAuth,
 			oauth.NewGoogleOAuthProvider,
+
+			repo.NewAuthRepository,
 			auth.NewService,
+			handler.NewAuthHandler,
 		),
 	)
 
 	var accountModule = fx.Module("account",
 		fx.Provide(
+			repo.NewAccountRepository,
 			account.NewService,
+			handler.NewAccountHandler,
 		),
 	)
 
 	var linkModule = fx.Module("link",
 		fx.Provide(
+			repo.NewLinkRepository,
 			link.NewService,
+			handler.NewLinkHandler,
 		),
 	)
 
 	var analyticsModule = fx.Module("analytics",
-		fx.Provide(analytics.NewService),
+		fx.Provide(
+			repo.NewAnalyticsRepository,
+			analytics.NewService,
+			handler.NewAnalyticsHandler,
+		),
 	)
 
 	var subscriptionModule = fx.Module("subscription",
-		fx.Provide(subscription.NewService),
+		fx.Provide(
+			repo.NewSubscriptionRepository,
+			subscription.NewService,
+			handler.NewSubscriptionHandler,
+		),
 	)
 
 	fx.New(fx.Options(
-		fx.Provide(
-			config.NewEnv,
-			config.NewConfig,
-			server.NewAppConfig,
-			logger.NewLogger,
-			cache.NewRedisConfig,
-			cache.NewRedisClient,
-			cache.NewStore,
-		),
-
+		configModule,
 		databaseModule,
+		infraModule,
+		appHttpModule,
 		authModule,
 		accountModule,
 		linkModule,
