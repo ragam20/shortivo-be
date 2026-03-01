@@ -25,7 +25,7 @@ func (m *CookieManager) SetRefreshToken(refToken string, expiredAt time.Time) *h
 	return &http.Cookie{
 		Name:     "refreshToken",
 		Value:    refToken,
-		Path:     "/refresh-token",
+		Path:     "/api/auth/refresh-token",
 		Secure:   secure,
 		MaxAge:   maxAge,
 		HttpOnly: true,
@@ -36,7 +36,7 @@ func (m *CookieManager) RevokeRefreshToken() *http.Cookie {
 	return &http.Cookie{
 		Name:     "refreshToken",
 		Value:    "",
-		Path:     "/refresh-token",
+		Path:     "/api/auth/refresh-token",
 		MaxAge:   0,
 		HttpOnly: true,
 	}
