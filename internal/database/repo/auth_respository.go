@@ -17,6 +17,17 @@ func NewAuthRepository(db *gorm.DB) auth.AuthRepository {
 	return &authRepository{db: db}
 }
 
+func (a *authRepository) WithTransaction(ctx context.Context, transaction func(repo auth.AuthRepository) error) error {
+	return a.db.Transaction(func(tx *gorm.DB) error {
+		r := &authRepository{db: tx}
+		if err := transaction(r); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (a *authRepository) SignIn(ctx context.Context, email string) (auth.Auth, error) {
 	var u entity.UserEntity
 	if err := a.db.WithContext(ctx).Where("email = ?", email).First(&u).Error; err != nil {
@@ -27,14 +38,15 @@ func (a *authRepository) SignIn(ctx context.Context, email string) (auth.Auth, e
 
 func (a *authRepository) SignUp(ctx context.Context, auth auth.Auth) error {
 	u := entity.NewAuth(auth)
-	if err := a.db.WithContext(ctx).Create(u).Error; err != nil {
+	if err := a.db.WithContext(ctx).Create(&u).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (a *authRepository) SaveRefreshToken(ctx context.Context, token auth.RefreshToken) error {
-	if err := a.db.WithContext(ctx).Create(token).Error; err != nil {
+	tkn := entity.ToRefreshTokenEntity(token)
+	if err := a.db.WithContext(ctx).Create(&tkn).Error; err != nil {
 		return err
 	}
 	return nil

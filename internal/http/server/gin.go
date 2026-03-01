@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"shortivo/internal/http/middleware"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 func NewGinEngine(
 	requestTimeout *middleware.RequestTimeoutMiddleware,
 	errorHandling *middleware.ErrorMiddleware,
+	recovery *middleware.RecoveryMiddleware,
 ) *gin.Engine {
 	cors := cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
@@ -24,11 +26,27 @@ func NewGinEngine(
 	r := gin.New()
 	r.Use(
 		gin.Logger(),
-		gin.Recovery(),
+		recovery.Handle(),
 		cors,
 		requestTimeout.Handle(),
 		errorHandling.Handle(),
 	)
+
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":    http.StatusNotFound,
+			"message":   "route not found",
+			"timestamp": time.Now().UTC(),
+		})
+	})
+
+	r.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"status":    http.StatusMethodNotAllowed,
+			"message":   "method no allowed",
+			"timestamp": time.Now().UTC(),
+		})
+	})
 
 	return r
 }

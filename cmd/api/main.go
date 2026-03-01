@@ -1,6 +1,7 @@
-package api
+package main
 
 import (
+	"net/http"
 	"shortivo/internal/app/account"
 	"shortivo/internal/app/analytics"
 	"shortivo/internal/app/auth"
@@ -27,12 +28,16 @@ func main() {
 		fx.Provide(
 			config.NewEnv,
 			config.NewConfig,
+			config.NewAppConfig,
+			config.NewDatabaseConfig,
+			config.NewRedisConfig,
+			config.NewJWTConfig,
+			config.NewGoogleOAuthConfig,
 		),
 	)
 
 	var databaseModule = fx.Module("database",
 		fx.Provide(
-			database.NewDatabaseConfig,
 			database.NewPostgresConnection,
 		),
 	)
@@ -41,7 +46,6 @@ func main() {
 		fx.Provide(
 			idgen.NewSnowflakeGen,
 			logger.NewLogger,
-			cache.NewRedisConfig,
 			cache.NewRedisClient,
 			cache.NewStore,
 		),
@@ -49,26 +53,23 @@ func main() {
 
 	var appHttpModule = fx.Module("apphttp",
 		fx.Provide(
-			server.NewAppConfig,
 			middleware.NewRequestTimeoutMiddleware,
 			middleware.NewErrorMiddleware,
+			middleware.NewRecoveryMiddleware,
+
 			server.NewGinEngine,
 			server.NewHTTPServer,
+
 			appHttp.NewCookieManager,
-		),
-		fx.Invoke(
-			router.NewRoutes,
 		),
 	)
 
 	var authModule = fx.Module("auth",
 		fx.Provide(
-			auth.NewJWTConfig,
 			auth.NewJWTManager,
 
 			middleware.NewAccessTokenMiddleware,
 
-			oauth.NewGoogleOAuthConfig,
 			oauth.NewGoogleOAuth,
 			oauth.NewGoogleOAuthProvider,
 
@@ -110,7 +111,7 @@ func main() {
 		),
 	)
 
-	fx.New(fx.Options(
+	app := fx.New(fx.Options(
 		configModule,
 		databaseModule,
 		infraModule,
@@ -120,5 +121,12 @@ func main() {
 		linkModule,
 		analyticsModule,
 		subscriptionModule,
+
+		fx.Invoke(
+			func(_ *http.Server) {},
+			router.NewRoutes,
+		),
 	))
+
+	app.Run()
 }

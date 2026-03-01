@@ -13,3 +13,7 @@ type LinkClicksEntity struct {
 
 	CreatedAt time.Time
 }
+
+func (LinkClicksEntity) TableName() string {
+	return "link_clicks"
+}

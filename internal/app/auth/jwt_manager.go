@@ -9,10 +9,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func NewJWTConfig(cfg *config.Config) config.JwtConfig {
-	return cfg.JWT
-}
-
 type JwtUser struct {
 	UserId int64
 	Claims *jwt.MapClaims
@@ -25,10 +21,10 @@ type JwtManager interface {
 }
 
 type jwtManager struct {
-	cfg config.JwtConfig
+	cfg *config.JwtConfig
 }
 
-func NewJWTManager(cfg config.JwtConfig) JwtManager {
+func NewJWTManager(cfg *config.JwtConfig) JwtManager {
 	return &jwtManager{cfg: cfg}
 }
 

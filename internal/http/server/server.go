@@ -13,9 +13,9 @@ import (
 
 func NewHTTPServer(
 	lc fx.Lifecycle,
-	cfg config.AppConfig,
+	cfg *config.AppConfig,
 	ge *gin.Engine,
-	log zerolog.Logger,
+	log *zerolog.Logger,
 ) *http.Server {
 
 	srv := &http.Server{

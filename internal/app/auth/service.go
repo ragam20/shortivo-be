@@ -55,7 +55,7 @@ func (s *authService) SignIn(ctx context.Context, req request.SignInRequest, use
 		return AuthTokens{}, response.InternalServerError(err.Error())
 	}
 
-	if !utils.ValidatePassword(*auth.Password, req.Password) {
+	if utils.ValidatePassword(*auth.Password, req.Password) {
 		return AuthTokens{}, response.BadRequestError("wrong password")
 	}
 
@@ -91,15 +91,8 @@ func (s *authService) SignUp(ctx context.Context, req request.SignUpRequest, use
 	auth := Auth{
 		ID:       s.idGen.NewID(),
 		Email:    req.Email,
+		Username: req.Username,
 		Password: &hashPass,
-	}
-
-	if err := s.authRepo.SignUp(ctx, auth); err != nil {
-		if errors.Is(err, gorm.ErrCheckConstraintViolated) {
-			return AuthTokens{}, response.BadRequestError("user already exists")
-		}
-
-		return AuthTokens{}, response.InternalServerError(fmt.Sprintf("error signup: %s", err.Error()))
 	}
 
 	accessToken, err := s.jwtManager.GenerateAccessToken(auth.ID)
@@ -112,10 +105,26 @@ func (s *authService) SignUp(ctx context.Context, req request.SignUpRequest, use
 		return AuthTokens{}, response.InternalServerError(err.Error())
 	}
 
-	refreshToken := s.jwtManager.NewRefreshToken(s.idGen.NewID(), auth.ID, secureToken, userAgent, ipAddress)
+	var refreshToken RefreshToken
 
-	if err := s.authRepo.SaveRefreshToken(ctx, refreshToken); err != nil {
-		return AuthTokens{}, response.InternalServerError(err.Error())
+	if err := s.authRepo.WithTransaction(ctx, func(repo AuthRepository) error {
+		if err := s.authRepo.SignUp(ctx, auth); err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return response.BadRequestError("user already exists")
+			}
+
+			return response.InternalServerError(fmt.Sprintf("error signup: %s", err.Error()))
+		}
+
+		refreshToken = s.jwtManager.NewRefreshToken(s.idGen.NewID(), auth.ID, secureToken, userAgent, ipAddress)
+
+		if err := s.authRepo.SaveRefreshToken(ctx, refreshToken); err != nil {
+			return response.InternalServerError(err.Error())
+		}
+
+		return nil
+	}); err != nil {
+		return AuthTokens{}, err
 	}
 
 	return AuthTokens{

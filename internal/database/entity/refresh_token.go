@@ -20,7 +20,11 @@ type RefreshTokenEntity struct {
 	CreatedAt time.Time
 }
 
-func ToEntity(refToken auth.RefreshToken) RefreshTokenEntity {
+func (RefreshTokenEntity) TableName() string {
+	return "refresh_tokens"
+}
+
+func ToRefreshTokenEntity(refToken auth.RefreshToken) RefreshTokenEntity {
 	return RefreshTokenEntity{
 		ID:        refToken.ID,
 		UserID:    refToken.UserID,

@@ -11,4 +11,7 @@ type RefreshToken struct {
 	ExpiredAt time.Time
 	Revoked   bool
 	RevokedAt *time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

@@ -56,3 +56,23 @@ func NewConfig(env *Env) *Config {
 		JWT:         env.Jwt,
 	}
 }
+
+func NewAppConfig(cfg *Config) *AppConfig {
+	return &cfg.App
+}
+
+func NewDatabaseConfig(cfg *Config) *DatabaseConfig {
+	return &cfg.Database
+}
+
+func NewJWTConfig(cfg *Config) *JwtConfig {
+	return &cfg.JWT
+}
+
+func NewRedisConfig(cfg *Config) *RedisConfig {
+	return &cfg.Redis
+}
+
+func NewGoogleOAuthConfig(cfg *Config) *GoogleOAuthConfig {
+	return &cfg.GoogleOAuth
+}

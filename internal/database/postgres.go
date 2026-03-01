@@ -11,11 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func NewDatabaseConfig(cfg *config.Config) config.DatabaseConfig {
-	return cfg.Database
-}
-
-func NewPostgresConnection(cfg config.DatabaseConfig, appCfg config.AppConfig, log zerolog.Logger) (*gorm.DB, error) {
+func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig, log *zerolog.Logger) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
 		cfg.Host,

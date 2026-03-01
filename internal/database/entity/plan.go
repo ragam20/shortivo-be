@@ -12,3 +12,7 @@ type PlanEntity struct {
 	UpdatedAt time.Time
 	CreatedAt time.Time
 }
+
+func (PlanEntity) TableName() string {
+	return "plans"
+}

@@ -16,3 +16,7 @@ type LinkEntity struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+func (LinkEntity) TableName() string {
+	return "links"
+}
