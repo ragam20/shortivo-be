@@ -14,7 +14,7 @@ func HashPassword(password string) (string, error) {
 		return "", errors.New("invalid hash password")
 	}
 
-	return string(hashPass), err
+	return string(hashPass), nil
 }
 
 func ValidatePassword(hashPassword string, password string) bool {

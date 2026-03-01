@@ -11,5 +11,5 @@ type linkRepository struct {
 }
 
 func NewLinkRepository(db *gorm.DB) link.LinkRepository {
-	return linkRepository{db: db}
+	return &linkRepository{db: db}
 }

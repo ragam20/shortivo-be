@@ -27,13 +27,13 @@ func NewAuthHandler(authService auth.AuthService, cookieManager *appHttp.CookieM
 func (h *AuthHandler) SignIn(c *gin.Context) {
 	var req request.SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		WriteError(c, response.BadRequestError(err.Error()))
+		c.Error(response.BadRequestError(err.Error()))
 		return
 	}
 
 	tokens, err := h.authService.SignIn(c.Request.Context(), req, c.Request.UserAgent(), c.ClientIP())
 	if err != nil {
-		WriteError(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -50,13 +50,13 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	var req request.SignUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		WriteError(c, response.BadRequestError(err.Error()))
+		c.Error(response.BadRequestError("error signup request. Please check request field"))
 		return
 	}
 
 	tokens, err := h.authService.SignUp(c.Request.Context(), req, c.Request.UserAgent(), c.ClientIP())
 	if err != nil {
-		WriteError(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -73,13 +73,13 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	token, ok := refreshTokenFromRequest(c)
 	if !ok {
-		WriteError(c, response.BadRequestError("refresh token is required"))
+		c.Error(response.BadRequestError("refresh token is required"))
 		return
 	}
 
 	tokens, err := h.authService.RefreshToken(c.Request.Context(), token, c.Request.UserAgent(), c.ClientIP())
 	if err != nil {
-		WriteError(c, err)
+		c.Error(err)
 		return
 	}
 
@@ -96,7 +96,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 func (h *AuthHandler) SignOut(c *gin.Context) {
 	userID, ok := UserIDFromContext(c)
 	if !ok {
-		WriteError(c, response.BadRequestError("userId is required"))
+		c.Error(response.BadRequestError("userId is required"))
 		return
 	}
 

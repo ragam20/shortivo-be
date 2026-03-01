@@ -11,5 +11,5 @@ type analyticsRepository struct {
 }
 
 func NewAnalyticsRepository(db *gorm.DB) analytics.AnalyticsRepository {
-	return analyticsRepository{db: db}
+	return &analyticsRepository{db: db}
 }

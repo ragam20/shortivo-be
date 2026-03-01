@@ -24,19 +24,10 @@ func (m *RequestTimeoutMiddleware) Handle() gin.HandlerFunc {
 
 		c.Request = c.Request.WithContext(ctx)
 
-		done := make(chan struct{})
-		go func() {
-			c.Next()
-			close(done)
-		}()
+		c.Next()
 
-		select {
-		case <-ctx.Done():
-			c.AbortWithStatusJSON(http.StatusGatewayTimeout, response.NewAppErr(
-				http.StatusGatewayTimeout,
-				"Request timeout",
-			))
-		case <-done:
+		if ctx.Err() == context.DeadlineExceeded {
+			c.AbortWithStatusJSON(http.StatusBadGateway, response.NewAppErr(http.StatusBadGateway, "request timeout"))
 		}
 	}
 }

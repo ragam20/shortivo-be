@@ -10,10 +10,6 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-func NewGoogleOAuthConfig(cfg *config.Config) config.GoogleOAuthConfig {
-	return cfg.GoogleOAuth
-}
-
 func NewGoogleOAuth(cfg config.GoogleOAuthConfig) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     cfg.ClientID,

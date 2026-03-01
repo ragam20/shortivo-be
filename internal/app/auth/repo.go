@@ -1,6 +1,8 @@
 package auth
 
-import "context"
+import (
+	"context"
+)
 
 type AuthRepository interface {
 	SignUp(ctx context.Context, auth Auth) error
@@ -9,4 +11,5 @@ type AuthRepository interface {
 	RevokeTokenByUser(ctx context.Context, userID int64) error
 	FindByTokenHash(ctx context.Context, token string) (RefreshToken, error)
 	DeleteToken(ctx context.Context, tokenHash string) error
+	WithTransaction(ctx context.Context, transaction func(repo AuthRepository) error) error
 }

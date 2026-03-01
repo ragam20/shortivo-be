@@ -1,19 +1,15 @@
 package handler
 
 import (
-	"errors"
+	"shortivo/internal/constant"
 	"shortivo/internal/http/request"
-	"shortivo/internal/http/response"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UserIDFromContext(c *gin.Context) (int64, bool) {
-	val, exists := c.Get("userId")
-	if !exists {
-		val, exists = c.Get("userID")
-	}
+	val, exists := c.Get(constant.UserIDCtx)
 
 	if exists {
 		switch v := val.(type) {
@@ -37,14 +33,4 @@ func UserIDFromContext(c *gin.Context) (int64, bool) {
 	}
 
 	return 0, false
-}
-
-func WriteError(c *gin.Context, err error) {
-	var appErr response.AppErrResponse
-	if errors.As(err, &appErr) {
-		c.JSON(appErr.Status, appErr)
-		return
-	}
-
-	c.Error(err)
 }

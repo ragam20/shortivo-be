@@ -22,6 +22,10 @@ func (m *ErrorMiddleware) Handle() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
+		if c.Writer.Written() {
+			return
+		}
+
 		if len(c.Errors) == 0 {
 			return
 		}
@@ -40,16 +44,16 @@ func (m *ErrorMiddleware) Handle() gin.HandlerFunc {
 			if status >= 500 {
 				m.log.Error().
 					Err(err).
-					Int("status", status).
+					Int("status", apperr.Status).
 					Str("timestamp", apperr.Timestamp.String()).
+					Str("path", c.Request.URL.Path).
+					Str("ipAddress", c.RemoteIP()).
 					Msg(apperr.Message)
 			}
 
 			if status >= 400 && status < 500 {
 				msg = apperr.Message
 			}
-		} else {
-			m.log.Error().Err(err).Msg("unexpected error")
 		}
 
 		c.AbortWithStatusJSON(status, gin.H{

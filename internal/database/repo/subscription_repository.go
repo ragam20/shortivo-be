@@ -11,5 +11,5 @@ type subscriptionRepository struct {
 }
 
 func NewSubscriptionRepository(db *gorm.DB) subscription.SubscriptionRepository {
-	return subscriptionRepository{db: db}
+	return &subscriptionRepository{db: db}
 }

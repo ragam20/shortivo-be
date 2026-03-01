@@ -8,10 +8,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func NewLogger(cfg *config.AppConfig) (zerolog.Logger, error) {
+func NewLogger(cfg *config.AppConfig) (*zerolog.Logger, error) {
 	level, err := zerolog.ParseLevel(cfg.LogLevel)
 	if err != nil {
-		return zerolog.Logger{}, fmt.Errorf("invalid log level: %w", err)
+		return &zerolog.Logger{}, fmt.Errorf("invalid log level: %w", err)
 	}
 
 	logger := zerolog.New(os.Stdout).Level(level).With().Timestamp().Logger()
@@ -22,5 +22,5 @@ func NewLogger(cfg *config.AppConfig) (zerolog.Logger, error) {
 		})
 	}
 
-	return logger, nil
+	return &logger, nil
 }
