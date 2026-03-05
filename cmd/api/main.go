@@ -89,8 +89,10 @@ func main() {
 
 	var linkModule = fx.Module("link",
 		fx.Provide(
+			link.NewLinkConfig,
+			link.NewLinkCache,
 			repo.NewLinkRepository,
-			link.NewService,
+			link.NewLinkService,
 			handler.NewLinkHandler,
 		),
 	)

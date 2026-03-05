@@ -5,13 +5,14 @@ import (
 	"shortivo/internal/config"
 	"shortivo/internal/database/entity"
 
-	"github.com/rs/zerolog"
+	appLogger "shortivo/internal/logger"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig, log *zerolog.Logger) (*gorm.DB, error) {
+func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig, log appLogger.Logger) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
 		cfg.Host,
@@ -28,9 +29,7 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig,
 		TranslateError: true,
 	})
 	if err != nil {
-		log.Error().
-			Err(err).
-			Msg("failed to connect database")
+		log.Error("failed to connect database", err, map[string]any{})
 		return nil, err
 	}
 
@@ -43,6 +42,7 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig,
 			entity.LinkClicksEntity{},
 			entity.SubscriptionEntity{},
 		); err != nil {
+			log.Error("failed to migrate", err, map[string]any{})
 			return nil, err
 		}
 	}

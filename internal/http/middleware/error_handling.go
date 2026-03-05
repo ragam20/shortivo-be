@@ -4,17 +4,17 @@ import (
 	"errors"
 	"net/http"
 	"shortivo/internal/http/response"
+	"shortivo/internal/logger"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 type ErrorMiddleware struct {
-	log *zerolog.Logger
+	log logger.Logger
 }
 
-func NewErrorMiddleware(log *zerolog.Logger) *ErrorMiddleware {
+func NewErrorMiddleware(log logger.Logger) *ErrorMiddleware {
 	return &ErrorMiddleware{log: log}
 }
 
@@ -42,13 +42,16 @@ func (m *ErrorMiddleware) Handle() gin.HandlerFunc {
 			timestamp = apperr.Timestamp
 
 			if status >= 500 {
-				m.log.Error().
-					Err(err).
-					Int("status", apperr.Status).
-					Str("timestamp", apperr.Timestamp.String()).
-					Str("path", c.Request.URL.Path).
-					Str("ipAddress", c.RemoteIP()).
-					Msg(apperr.Message)
+				m.log.Error(
+					apperr.Message,
+					err,
+					map[string]any{
+						"status":    apperr.Status,
+						"timestamp": apperr.Timestamp,
+						"path":      c.Request.URL.Path,
+						"ipAddress": c.ClientIP(),
+					},
+				)
 			}
 
 			if status >= 400 && status < 500 {
