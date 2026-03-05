@@ -14,45 +14,60 @@ func NewRoutes(
 	accessTokenMiddleware *middleware.AccessTokenMiddleware,
 	authHandler *handler.AuthHandler,
 	accountHandler *handler.AccountHandler,
-	// linkHandler *handler.LinkHandler,
+	linkHandler *handler.LinkHandler,
 	// analyticsHandler *handler.AnalyticsHandler,
 	// subscriptionHandler *handler.SubscriptionHandler,
 ) {
-	r := g.Group("/api")
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":    http.StatusOK,
-			"message":   "pong",
+	g.GET("/r/:code", linkHandler.RedirectShortLink)
+	g.HEAD("/r/:code", linkHandler.RedirectShortLink)
+
+	api := g.Group("/api")
+	{
+		api.GET("/ping", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"status":    http.StatusOK,
+				"message":   "pong",
+				"timestamp": time.Now().UTC(),
+			})
+		})
+
+		authApi := api.Group("/auth")
+		{
+			authApi.POST("/signin", authHandler.SignIn)
+			authApi.POST("/signup", authHandler.SignUp)
+			authApi.POST("/refresh-token", authHandler.RefreshToken)
+			authApi.POST("/logout", accessTokenMiddleware.Handle(), authHandler.SignOut)
+		}
+
+		accountApi := api.Group("/accounts", accessTokenMiddleware.Handle())
+		{
+			accountApi.GET("/profile", accountHandler.GetProfile)
+		}
+
+		linkApi := api.Group("/links")
+		{
+			linkApi.GET("", accessTokenMiddleware.Handle(), linkHandler.GetLinks)
+			linkApi.POST("/create", accessTokenMiddleware.Handle(), linkHandler.CreateShortLink)
+			linkApi.PATCH("/:linkId", accessTokenMiddleware.Handle(), linkHandler.UpdateLink)
+			linkApi.DELETE("/:linkId", accessTokenMiddleware.Handle(), linkHandler.DeleteLink)
+		}
+	}
+
+	g.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":    http.StatusNotFound,
+			"message":   "route not found",
 			"timestamp": time.Now().UTC(),
 		})
 	})
 
-	authApi := r.Group("/auth")
-	{
-		authApi.POST("/signin", authHandler.SignIn)
-		authApi.POST("/signup", authHandler.SignUp)
-		authApi.POST("/refresh-token", authHandler.RefreshToken)
-		authApi.POST("/logout", accessTokenMiddleware.Handle(), authHandler.SignOut)
-	}
+	g.NoMethod(func(c *gin.Context) {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"status":    http.StatusMethodNotAllowed,
+			"message":   "method no allowed",
+			"timestamp": time.Now().UTC(),
+		})
+	})
 
-	accountApi := r.Group("/accounts", accessTokenMiddleware.Handle())
-	{
-		accountApi.GET("/profile", accountHandler.GetProfile)
-	}
-
-	// linkApi := r.Group("/links")
-	// {
-
-	// }
-
-	// analyticsApi := r.Group("/analytics")
-	// {
-
-	// }
-
-	// subscriptionApi := r.Group("/subscriptions")
-	// {
-
-	// }
 }

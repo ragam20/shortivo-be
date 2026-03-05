@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"shortivo/internal/app/link"
+	"time"
+)
 
 type LinkClicksEntity struct {
 	ID        int64      `gorm:"primaryKey;autoIncrement:false"`
@@ -9,11 +12,35 @@ type LinkClicksEntity struct {
 	IpAddress string     `gorm:"size:64;not null;index"`
 	UserAgent string     `gorm:"size:512;not null"`
 	Device    string     `gorm:"size:255;not null"`
-	Referrer  *string    `gorm:"type:text"`
+	Referer   string     `gorm:"type:text"`
 
 	CreatedAt time.Time
 }
 
 func (LinkClicksEntity) TableName() string {
 	return "link_clicks"
+}
+
+func (e *LinkClicksEntity) ToDomain() link.LinkClicks {
+	return link.LinkClicks{
+		ID:        e.ID,
+		LinkID:    e.ID,
+		IpAddress: e.IpAddress,
+		UserAgent: e.UserAgent,
+		Device:    e.Device,
+		Referer:   e.Referer,
+		CreatedAt: e.CreatedAt,
+	}
+}
+
+func NewLinkClicks(domain link.LinkClicks) LinkClicksEntity {
+	return LinkClicksEntity{
+		ID:        domain.ID,
+		LinkID:    domain.LinkID,
+		IpAddress: domain.IpAddress,
+		UserAgent: domain.UserAgent,
+		Device:    domain.Device,
+		Referer:   domain.Referer,
+		CreatedAt: domain.CreatedAt,
+	}
 }

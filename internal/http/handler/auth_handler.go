@@ -94,7 +94,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 }
 
 func (h *AuthHandler) SignOut(c *gin.Context) {
-	userID, ok := UserIDFromContext(c)
+	userID, ok := userIDFromContext(c)
 	if !ok {
 		c.Error(response.BadRequestError("userId is required"))
 		return
