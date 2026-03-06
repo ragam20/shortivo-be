@@ -108,6 +108,7 @@ func main() {
 	var subscriptionModule = fx.Module("subscription",
 		fx.Provide(
 			repo.NewSubscriptionRepository,
+			repo.NewPlanRespository,
 			subscription.NewService,
 			handler.NewSubscriptionHandler,
 		),

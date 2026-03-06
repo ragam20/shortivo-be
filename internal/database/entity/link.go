@@ -3,6 +3,8 @@ package entity
 import (
 	"shortivo/internal/app/link"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type LinkEntity struct {
@@ -19,6 +21,8 @@ type LinkEntity struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	DeletedAt *gorm.DeletedAt `gorm:"index"`
 }
 
 func (LinkEntity) TableName() string {

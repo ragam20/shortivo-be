@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"shortivo/internal/app/subscription"
+	"time"
+)
 
 type SubscriptionEntity struct {
 	ID        int64      `gorm:"primaryKey;autoIncrement:false"`
@@ -17,4 +20,28 @@ type SubscriptionEntity struct {
 
 func (SubscriptionEntity) TableName() string {
 	return "subscriptions"
+}
+
+func NewSubscriptionEntity(domain subscription.Subscription) SubscriptionEntity {
+	return SubscriptionEntity{
+		ID:        domain.ID,
+		UserID:    domain.UserID,
+		PlanID:    domain.PlanID,
+		PeriodEnd: domain.PeriodEnd,
+		Status:    string(domain.Status),
+		CreatedAt: domain.CreatedAt,
+		UpdatedAt: domain.UpdatedAt,
+	}
+}
+
+func (e SubscriptionEntity) ToDomain() subscription.Subscription {
+	return subscription.Subscription{
+		ID:        e.ID,
+		UserID:    e.UserID,
+		PlanID:    e.PlanID,
+		Status:    subscription.SubscriptionStatus(e.Status),
+		PeriodEnd: e.PeriodEnd,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
 }

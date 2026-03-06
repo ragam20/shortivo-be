@@ -1,19 +1,33 @@
 app:
   env: development
-  version: 0.0.1
+  version:
+  log_level: debug
   port: 8000
+  node_id:
+  request_timeout: 5s
+  shortener_base_url:
+  refresh_token_api:
 
-database:
+db:
   host:
   port:
+  user:
   password:
-  name: shortivo_dev
+  name:
+  sslmode:
+  time_zone:
 
 jwt:
   access_secret:
   expiration:
+  refresh_exp:
 
 redis:
   host:
   port:
   password:
+
+google_oauth:
+  client_id:
+  client_secret:
+  redirect:

@@ -3,8 +3,9 @@ package request
 import "time"
 
 type CreateLinkRequest struct {
-	Title string `json:"title"`
-	Url   string `json:"url"`
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
 }
 
 type UpdateLinkRequest struct {

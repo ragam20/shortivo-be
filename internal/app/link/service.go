@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"shortivo/internal/app/subscription"
 	"shortivo/internal/http/response"
 	"shortivo/internal/idgen"
 	"shortivo/internal/logger"
@@ -24,15 +25,26 @@ type LinkService interface {
 type linkService struct {
 	cfg      *LinkConfig
 	linkRepo LinkRepository
+	subsRepo subscription.SubscriptionRepository
+	planRepo subscription.PlanRepository
 	idGen    idgen.IDGenerator
 	logger   logger.Logger
 	cache    LinkCache
 }
 
-func NewLinkService(cfg *LinkConfig, linkRepo LinkRepository, idGen idgen.IDGenerator, logger logger.Logger, cache LinkCache) LinkService {
+func NewLinkService(cfg *LinkConfig,
+	linkRepo LinkRepository,
+	subsRepo subscription.SubscriptionRepository,
+	planRepo subscription.PlanRepository,
+	idGen idgen.IDGenerator,
+	logger logger.Logger,
+	cache LinkCache,
+) LinkService {
 	return &linkService{
 		cfg:      cfg,
 		linkRepo: linkRepo,
+		subsRepo: subsRepo,
+		planRepo: planRepo,
 		idGen:    idGen,
 		logger:   logger,
 		cache:    cache,
@@ -93,6 +105,15 @@ func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkComman
 		return response.BadRequestError("must be valid URL")
 	}
 
+	isAllowed, err := s.isAllowedToCreateLink(ctx, cmd.UserID)
+	if err != nil {
+		return err
+	}
+
+	if !isAllowed {
+		return response.BadRequestError("you have reached your monthly link limit.")
+	}
+
 	linkID := s.idGen.NewID()
 
 	shortCode, err := encodeBase62(linkID)
@@ -105,6 +126,7 @@ func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkComman
 		ID:          linkID,
 		UserID:      cmd.UserID,
 		Title:       cleanTitle,
+		Description: cmd.Description,
 		OriginalURL: cleanURL,
 		CodeURL:     shortCode,
 	}
@@ -112,10 +134,51 @@ func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkComman
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return response.BadRequestError("already exists")
 		}
-		return response.InternalServerError("")
+		return response.InternalServerError("error create link")
 	}
 
 	return nil
+}
+
+func (s *linkService) isAllowedToCreateLink(ctx context.Context, userID int64) (bool, error) {
+	now := time.Now()
+
+	var startTime time.Time
+	var endTime time.Time
+	var plan subscription.Plan
+
+	sub, err := s.subsRepo.GetSubscriptionByUser(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// FREE plan
+			startTime = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+			endTime = startTime.AddDate(0, 1, 0)
+
+			plan, err = s.planRepo.GetPlanByCode(ctx, "free")
+			if err != nil {
+				return false, response.InternalServerError("error get free plan")
+			}
+
+		} else {
+			return false, response.InternalServerError("error get subscription")
+		}
+
+	} else {
+		startTime = sub.CreatedAt
+		endTime = sub.PeriodEnd
+
+		plan, err = s.planRepo.GetPlanByID(ctx, sub.PlanID)
+		if err != nil {
+			return false, response.InternalServerError("error get plan")
+		}
+	}
+
+	currLimit, err := s.linkRepo.GetCurrentLimit(ctx, userID, startTime, endTime)
+	if err != nil {
+		return false, response.InternalServerError("error get current limit")
+	}
+
+	return currLimit < int64(plan.MonthlyLimit), nil
 }
 
 func (s *linkService) UpdateLink(ctx context.Context, cmd UpdateLinkCommand) (LinkResult, error) {
