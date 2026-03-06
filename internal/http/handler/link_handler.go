@@ -116,9 +116,10 @@ func (h *LinkHandler) CreateShortLink(c *gin.Context) {
 	}
 
 	if err := h.linkService.CreateShortLink(c.Request.Context(), &link.CreateLinkCommand{
-		UserID: userID,
-		Title:  req.Title,
-		URL:    req.Url,
+		UserID:      userID,
+		Title:       req.Title,
+		URL:         req.URL,
+		Description: req.Description,
 	}); err != nil {
 		c.Error(err)
 		return

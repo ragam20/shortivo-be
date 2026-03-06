@@ -2,6 +2,7 @@ package link
 
 import (
 	"context"
+	"time"
 )
 
 type LinkRepository interface {
@@ -14,4 +15,5 @@ type LinkRepository interface {
 	GetTotalItemByUser(ctx context.Context, userID int64) int64
 	IncrementClickCount(ctx context.Context, linkID int64) error
 	IncrementUniqueClick(ctx context.Context, linkID int64) error
+	GetCurrentLimit(ctx context.Context, userID int64, startAt time.Time, endAt time.Time) (int64, error)
 }

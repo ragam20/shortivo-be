@@ -39,9 +39,10 @@ type LinkClicks struct {
 **/
 
 type CreateLinkCommand struct {
-	UserID int64
-	Title  string
-	URL    string
+	UserID      int64
+	Title       string
+	URL         string
+	Description string
 }
 
 type UpdateLinkCommand struct {
@@ -77,8 +78,8 @@ type GetLinksQuery struct {
 }
 
 // End Query
-
 /**
+
 	Result
 **/
 

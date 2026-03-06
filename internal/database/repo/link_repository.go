@@ -4,6 +4,7 @@ import (
 	"context"
 	"shortivo/internal/app/link"
 	"shortivo/internal/database/entity"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -125,4 +126,16 @@ func (r *linkRepository) IncrementUniqueClick(ctx context.Context, linkID int64)
 	}
 
 	return nil
+}
+
+func (r *linkRepository) GetCurrentLimit(ctx context.Context, userID int64, startAt time.Time, endAt time.Time) (int64, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).
+		Model(&entity.LinkEntity{}).
+		Where("user_Id = ? AND created_at >= ? AND created_at <= ?", userID, startAt, endAt).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
