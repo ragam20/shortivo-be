@@ -2,9 +2,10 @@ package router
 
 import (
 	"net/http"
+	"time"
+
 	"shortivo/internal/http/handler"
 	"shortivo/internal/http/middleware"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +16,9 @@ func NewRoutes(
 	authHandler *handler.AuthHandler,
 	accountHandler *handler.AccountHandler,
 	linkHandler *handler.LinkHandler,
+	subscriptionHandler *handler.SubscriptionHandler,
 	// analyticsHandler *handler.AnalyticsHandler,
-	// subscriptionHandler *handler.SubscriptionHandler,
 ) {
-
 	g.GET("/r/:code", linkHandler.RedirectShortLink)
 	g.HEAD("/r/:code", linkHandler.RedirectShortLink)
 
@@ -52,6 +52,11 @@ func NewRoutes(
 			linkApi.PATCH("/:linkId", accessTokenMiddleware.Handle(), linkHandler.UpdateLink)
 			linkApi.DELETE("/:linkId", accessTokenMiddleware.Handle(), linkHandler.DeleteLink)
 		}
+
+		subscriptionApi := api.Group("/subscriptions")
+		{
+			subscriptionApi.POST("/cancel/:id", accessTokenMiddleware.Handle(), subscriptionHandler.CancelSubsription)
+		}
 	}
 
 	g.NoRoute(func(c *gin.Context) {
@@ -69,5 +74,4 @@ func NewRoutes(
 			"timestamp": time.Now().UTC(),
 		})
 	})
-
 }
