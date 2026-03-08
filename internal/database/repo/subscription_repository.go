@@ -2,9 +2,10 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"shortivo/internal/app/subscription"
 	"shortivo/internal/database/entity"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,4 +28,24 @@ func (r *subscriptionRepository) GetSubscriptionByUser(ctx context.Context, user
 	}
 
 	return sub.ToDomain(), nil
+}
+
+func (r *subscriptionRepository) ChangeStatus(ctx context.Context, userID int64, subsID int64, sub subscription.SubscriptionStatus) error {
+	if err := r.db.WithContext(ctx).
+		Model(&entity.SubscriptionEntity{}).
+		Where("id = ? AND user_id = ?", subsID, userID).
+		UpdateColumn("status", sub).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *subscriptionRepository) CreateSubscription(ctx context.Context, userID int64, subs subscription.Subscription) error {
+	e := entity.NewSubscriptionEntity(subs)
+	if err := r.db.WithContext(ctx).Create(&e).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

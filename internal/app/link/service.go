@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"shortivo/internal/app/subscription"
 	"shortivo/internal/http/response"
 	"shortivo/internal/idgen"
 	"shortivo/internal/logger"
-	"strings"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -117,7 +118,6 @@ func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkComman
 	linkID := s.idGen.NewID()
 
 	shortCode, err := encodeBase62(linkID)
-
 	if err != nil {
 		return response.InternalServerError("error generate shortCode for url")
 	}
@@ -162,7 +162,6 @@ func (s *linkService) isAllowedToCreateLink(ctx context.Context, userID int64) (
 		} else {
 			return false, response.InternalServerError("error get subscription")
 		}
-
 	} else {
 		startTime = sub.CreatedAt
 		endTime = sub.PeriodEnd
@@ -319,7 +318,6 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 		}
 
 		s.cache.SaveUniqueClick(trackCtx, linkID, ipAddr, userAgent, referer, device)
-
 	}(linkID, cmd.IpAddress, cmd.UserAgent, cmd.Referer, cmd.Device)
 
 	return originalURL, nil

@@ -23,6 +23,10 @@ type Subscription struct {
 	CreatedAt time.Time
 }
 
+func (d *Subscription) IsStatusActive() bool {
+	return d.Status == SubscriptionActive
+}
+
 type Plan struct {
 	ID                  int64
 	Code                string
@@ -36,3 +40,8 @@ type Plan struct {
 }
 
 // End Domain
+
+type CancelSubscriptionCMD struct {
+	UserID int64
+	SubsID int64
+}
