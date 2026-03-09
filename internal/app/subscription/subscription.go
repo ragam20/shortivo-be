@@ -41,7 +41,30 @@ type Plan struct {
 
 // End Domain
 
+// command
 type CancelSubscriptionCMD struct {
 	UserID int64
 	SubsID int64
+}
+
+//
+
+type SubscriptionResult struct {
+	ID        int64
+	PeriodEnd time.Time
+	Status    SubscriptionStatus
+}
+
+type PlanResult struct {
+	PlanID              int64
+	Code                string
+	Title               string
+	MonthlyLimit        int32
+	AnalyticsEnabled    bool
+	CustomDomainEnabled bool
+}
+
+type GetCurrSubscriptionResult struct {
+	Plan         PlanResult
+	Subscription *SubscriptionResult
 }

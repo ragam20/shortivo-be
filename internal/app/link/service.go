@@ -147,7 +147,7 @@ func (s *linkService) isAllowedToCreateLink(ctx context.Context, userID int64) (
 	var endTime time.Time
 	var plan subscription.Plan
 
-	sub, err := s.subsRepo.GetSubscriptionByUser(ctx, userID)
+	sub, err := s.subsRepo.GetActiveSubscriptionByUser(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// FREE plan

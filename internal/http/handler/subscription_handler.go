@@ -20,6 +20,64 @@ func NewSubscriptionHandler(subsService subscription.SubscriptionService) *Subsc
 	}
 }
 
+func (h *SubscriptionHandler) GetCurrentSubscription(c *gin.Context) {
+	userID, isExists := userIDFromContext(c)
+	if !isExists {
+		c.Error(response.Unauthorized())
+		return
+	}
+
+	result, err := h.subsService.GetCurrentSubscription(c.Request.Context(), userID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	res := response.GetCurrentSubscriptionResponse{
+		Plan: response.PlanResponse{
+			ID:                  result.Plan.PlanID,
+			Title:               result.Plan.Title,
+			Code:                result.Plan.Code,
+			MonthlyLimit:        result.Plan.MonthlyLimit,
+			AnalyticsEnabled:    result.Plan.AnalyticsEnabled,
+			CustomDomainEnabled: result.Plan.CustomDomainEnabled,
+		},
+	}
+
+	if result.Subscription != nil {
+		res.Subscription = &response.SubscriptionResponse{
+			ID:        result.Subscription.ID,
+			PeriodEnd: result.Subscription.PeriodEnd,
+			Status:    string(result.Subscription.Status),
+		}
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse("get current subscription successfully", res))
+}
+
+func (h *SubscriptionHandler) GetCurrentPlan(c *gin.Context) {
+	userID, isExists := userIDFromContext(c)
+	if !isExists {
+		c.Error(response.Unauthorized())
+		return
+	}
+
+	plan, err := h.subsService.GetCurrentPlan(c.Request.Context(), userID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse("get plan successfully", response.PlanResponse{
+		ID:                  plan.ID,
+		Code:                plan.Code,
+		Title:               plan.Title,
+		MonthlyLimit:        plan.MonthlyLimit,
+		AnalyticsEnabled:    plan.AnalyticsEnabled,
+		CustomDomainEnabled: plan.CustomDomainEnabled,
+	}))
+}
+
 func (h *SubscriptionHandler) CancelSubsription(c *gin.Context) {
 	userID, isExists := userIDFromContext(c)
 	if !isExists {

@@ -55,6 +55,8 @@ func NewRoutes(
 
 		subscriptionApi := api.Group("/subscriptions")
 		{
+			subscriptionApi.GET("/current", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentSubscription)
+			subscriptionApi.GET("/plan", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentPlan)
 			subscriptionApi.POST("/cancel/:id", accessTokenMiddleware.Handle(), subscriptionHandler.CancelSubsription)
 		}
 	}
