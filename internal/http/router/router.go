@@ -17,7 +17,7 @@ func NewRoutes(
 	accountHandler *handler.AccountHandler,
 	linkHandler *handler.LinkHandler,
 	subscriptionHandler *handler.SubscriptionHandler,
-	// analyticsHandler *handler.AnalyticsHandler,
+	analyticsHandler *handler.AnalyticsHandler,
 ) {
 	g.GET("/r/:code", linkHandler.RedirectShortLink)
 	g.HEAD("/r/:code", linkHandler.RedirectShortLink)
@@ -58,6 +58,14 @@ func NewRoutes(
 			subscriptionApi.GET("/current", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentSubscription)
 			subscriptionApi.GET("/plan", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentPlan)
 			subscriptionApi.POST("/cancel/:id", accessTokenMiddleware.Handle(), subscriptionHandler.CancelSubsription)
+		}
+
+		analyticsApi := api.Group("/analytics", accessTokenMiddleware.Handle())
+		{
+			analyticsApi.GET("/:linkId/total-clicks", analyticsHandler.GetTotalClicks)
+			analyticsApi.GET("/:linkId/referer", analyticsHandler.GetEnagementByReferer)
+			analyticsApi.GET("/:linkId/device", analyticsHandler.GetEngagementByDevices)
+			analyticsApi.GET("/:linkId/overtime", analyticsHandler.GetTotalEngagementByOvertime)
 		}
 	}
 
