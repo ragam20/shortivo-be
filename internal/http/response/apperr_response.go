@@ -59,3 +59,11 @@ func Unauthorized() *AppErrResponse {
 		Timestamp: time.Now().UTC(),
 	}
 }
+
+func ForbiddenError(msg string) *AppErrResponse {
+	return &AppErrResponse{
+		Status:    http.StatusForbidden,
+		Message:   msg,
+		Timestamp: time.Now().UTC(),
+	}
+}

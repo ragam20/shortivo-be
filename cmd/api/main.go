@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+
 	"shortivo/internal/app/account"
 	"shortivo/internal/app/analytics"
 	"shortivo/internal/app/auth"
@@ -24,7 +25,7 @@ import (
 )
 
 func main() {
-	var configModule = fx.Module("config",
+	configModule := fx.Module("config",
 		fx.Provide(
 			config.NewEnv,
 			config.NewConfig,
@@ -36,13 +37,13 @@ func main() {
 		),
 	)
 
-	var databaseModule = fx.Module("database",
+	databaseModule := fx.Module("database",
 		fx.Provide(
 			database.NewPostgresConnection,
 		),
 	)
 
-	var infraModule = fx.Module("infra",
+	infraModule := fx.Module("infra",
 		fx.Provide(
 			idgen.NewSnowflakeGen,
 			logger.NewLogger,
@@ -51,7 +52,7 @@ func main() {
 		),
 	)
 
-	var appHttpModule = fx.Module("apphttp",
+	appHttpModule := fx.Module("apphttp",
 		fx.Provide(
 			middleware.NewRequestTimeoutMiddleware,
 			middleware.NewErrorMiddleware,
@@ -64,7 +65,7 @@ func main() {
 		),
 	)
 
-	var authModule = fx.Module("auth",
+	authModule := fx.Module("auth",
 		fx.Provide(
 			auth.NewJWTManager,
 
@@ -79,7 +80,7 @@ func main() {
 		),
 	)
 
-	var accountModule = fx.Module("account",
+	accountModule := fx.Module("account",
 		fx.Provide(
 			repo.NewAccountRepository,
 			account.NewService,
@@ -87,7 +88,7 @@ func main() {
 		),
 	)
 
-	var linkModule = fx.Module("link",
+	linkModule := fx.Module("link",
 		fx.Provide(
 			link.NewLinkConfig,
 			link.NewLinkCache,
@@ -97,7 +98,7 @@ func main() {
 		),
 	)
 
-	var analyticsModule = fx.Module("analytics",
+	analyticsModule := fx.Module("analytics",
 		fx.Provide(
 			repo.NewAnalyticsRepository,
 			analytics.NewService,
@@ -105,7 +106,7 @@ func main() {
 		),
 	)
 
-	var subscriptionModule = fx.Module("subscription",
+	subscriptionModule := fx.Module("subscription",
 		fx.Provide(
 			repo.NewSubscriptionRepository,
 			repo.NewPlanRespository,
