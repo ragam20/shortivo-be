@@ -19,9 +19,6 @@ func NewRoutes(
 	subscriptionHandler *handler.SubscriptionHandler,
 	analyticsHandler *handler.AnalyticsHandler,
 ) {
-	g.GET("/r/:code", linkHandler.RedirectShortLink)
-	g.HEAD("/r/:code", linkHandler.RedirectShortLink)
-
 	api := g.Group("/api")
 	{
 		api.GET("/ping", func(c *gin.Context) {
@@ -68,6 +65,8 @@ func NewRoutes(
 			analyticsApi.GET("/:linkId/overtime", analyticsHandler.GetTotalEngagementByOvertime)
 		}
 	}
+
+	g.GET("/:code", linkHandler.RedirectShortLink)
 
 	g.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{

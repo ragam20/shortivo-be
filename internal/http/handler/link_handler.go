@@ -2,11 +2,12 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
+
 	"shortivo/internal/app/link"
 	"shortivo/internal/http/request"
 	"shortivo/internal/http/response"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -98,6 +99,8 @@ func (h *LinkHandler) RedirectShortLink(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+
+	c.Set("Cache-Control", "no-store")
 
 	c.Redirect(http.StatusFound, originalURL)
 }
