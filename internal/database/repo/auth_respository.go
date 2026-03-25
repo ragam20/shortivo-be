@@ -28,9 +28,17 @@ func (a *authRepository) WithTransaction(ctx context.Context, transaction func(r
 	})
 }
 
-func (a *authRepository) SignIn(ctx context.Context, email string) (auth.Auth, error) {
+func (a *authRepository) FindByEmail(ctx context.Context, email string) (auth.Auth, error) {
 	var u entity.UserEntity
 	if err := a.db.WithContext(ctx).Where("email = ?", email).First(&u).Error; err != nil {
+		return auth.Auth{}, err
+	}
+	return u.ToAuthDomain(), nil
+}
+
+func (a *authRepository) FindByGoogleID(ctx context.Context, googleID string) (auth.Auth, error) {
+	var u entity.UserEntity
+	if err := a.db.WithContext(ctx).Where("google_id = ?", googleID).First(&u).Error; err != nil {
 		return auth.Auth{}, err
 	}
 	return u.ToAuthDomain(), nil
@@ -39,6 +47,16 @@ func (a *authRepository) SignIn(ctx context.Context, email string) (auth.Auth, e
 func (a *authRepository) SignUp(ctx context.Context, auth auth.Auth) error {
 	u := entity.NewAuth(auth)
 	if err := a.db.WithContext(ctx).Create(&u).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *authRepository) UpdateGoogleID(ctx context.Context, userID int64, googleID string) error {
+	if err := a.db.WithContext(ctx).
+		Model(&entity.UserEntity{}).
+		Where("id = ?", userID).
+		Update("google_id", googleID).Error; err != nil {
 		return err
 	}
 	return nil

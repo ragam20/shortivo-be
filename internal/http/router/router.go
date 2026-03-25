@@ -31,6 +31,8 @@ func NewRoutes(
 
 		authApi := api.Group("/auth")
 		{
+			authApi.GET("/google", authHandler.GoogleSignIn)
+			authApi.GET("/google/redirect", authHandler.GoogleCallback)
 			authApi.POST("/signin", authHandler.SignIn)
 			authApi.POST("/signup", authHandler.SignUp)
 			authApi.POST("/refresh-token", authHandler.RefreshToken)

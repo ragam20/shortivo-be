@@ -18,3 +18,10 @@ type RefreshTokenRequest struct {
 type SignOutRequest struct {
 	UserID int64 `json:"userId" binding:"required"`
 }
+
+type GoogleOAuthCallbackRequest struct {
+	Code             string `form:"code" binding:"required"`
+	State            string `form:"state" binding:"required"`
+	Error            string `form:"error"`
+	ErrorDescription string `form:"error_description"`
+}
