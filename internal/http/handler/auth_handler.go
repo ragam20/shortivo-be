@@ -93,6 +93,63 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) GoogleSignIn(c *gin.Context) {
+	loginURL, state, err := h.authService.GoogleSignInURL()
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.SetCookieData(h.cookieManager.SetGoogleOAuthState(state))
+	c.Redirect(http.StatusTemporaryRedirect, loginURL)
+}
+
+func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+	req := request.GoogleOAuthCallbackRequest{
+		Code:             strings.TrimSpace(c.Query("code")),
+		State:            strings.TrimSpace(c.Query("state")),
+		Error:            strings.TrimSpace(c.Query("error")),
+		ErrorDescription: strings.TrimSpace(c.Query("error_description")),
+	}
+
+	if strings.TrimSpace(req.Error) != "" {
+		errMsg := req.ErrorDescription
+		if errMsg == "" {
+			errMsg = req.Error
+		}
+		c.Error(response.BadRequestError(errMsg))
+		return
+	}
+
+	if req.Code == "" || req.State == "" {
+		c.Error(response.BadRequestError("invalid google oauth callback"))
+		return
+	}
+
+	state, err := c.Cookie(appHttp.GoogleOAuthStateCookieName())
+	if err != nil || strings.TrimSpace(state) == "" {
+		c.Error(response.Unauthorized())
+		return
+	}
+
+	c.SetCookieData(h.cookieManager.RevokeGoogleOAuthState())
+
+	tokens, err := h.authService.SignInWithGoogle(c.Request.Context(), req, state, c.Request.UserAgent(), c.ClientIP())
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.SetCookieData(h.cookieManager.SetRefreshToken(tokens.RefreshToken, tokens.RefreshExp))
+
+	c.JSON(http.StatusOK, response.SuccessResponse[response.SignInResponse]{
+		Status:    http.StatusOK,
+		Message:   "success",
+		Timestamp: time.Now().UTC(),
+		Data:      toSignInResponse(tokens),
+	})
+}
+
 func (h *AuthHandler) SignOut(c *gin.Context) {
 	userID, ok := userIDFromContext(c)
 	if !ok {
