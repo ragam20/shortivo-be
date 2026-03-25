@@ -256,7 +256,8 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 	var linkID int64
 	var originalURL string
 
-	if strings.TrimSpace(cmd.Code) == "" {
+	cmd.Code = strings.TrimSpace(cmd.Code)
+	if !isValidShortCode(cmd.Code) {
 		return "", response.BadRequestError("invalid code")
 	}
 

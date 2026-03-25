@@ -55,3 +55,21 @@ func visitorHash(ipAddr, userAgent, referer, device string) [20]byte {
 	raw := ipAddr + "|" + userAgent + "|" + ref + "|" + device
 	return sha1.Sum([]byte(raw))
 }
+
+func isValidShortCode(code string) bool {
+	if code == "" {
+		return false
+	}
+
+	for _, r := range code {
+		switch {
+		case r >= '0' && r <= '9':
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		default:
+			return false
+		}
+	}
+
+	return true
+}

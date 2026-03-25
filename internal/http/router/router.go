@@ -68,6 +68,10 @@ func NewRoutes(
 		}
 	}
 
+	g.GET("/favicon.ico", func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
 	g.GET("/:code", linkHandler.RedirectShortLink)
 
 	g.NoRoute(func(c *gin.Context) {
