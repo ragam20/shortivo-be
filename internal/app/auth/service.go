@@ -7,14 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
+
 	"shortivo/internal/app/auth/oauth"
 	"shortivo/internal/config"
 	"shortivo/internal/http/request"
 	"shortivo/internal/http/response"
 	"shortivo/internal/idgen"
 	"shortivo/internal/utils"
-	"strings"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ type AuthService interface {
 	SignUp(ctx context.Context, req request.SignUpRequest, userAgent string, ipAddress string) (AuthTokens, error)
 	GoogleSignInURL() (string, string, error)
 	SignInWithGoogle(ctx context.Context, req request.GoogleOAuthCallbackRequest, expectedState string, userAgent string, ipAddress string) (AuthTokens, error)
-	SignOut(ctx context.Context, userID int64)
+	SignOut(ctx context.Context, userID int64, token string) error
 	RefreshToken(ctx context.Context, token string, userAgent string, ipAddress string) (AuthTokens, error)
 }
 
@@ -73,7 +74,7 @@ func (s *authService) SignIn(ctx context.Context, req request.SignInRequest, use
 	}
 
 	if utils.ValidatePassword(*auth.Password, req.Password) {
-		return AuthTokens{}, response.BadRequestError("wrong password")
+		return AuthTokens{}, response.BadRequestError("Please check your email or password.")
 	}
 
 	return s.issueTokens(ctx, s.authRepo, auth.ID, userAgent, ipAddress)
@@ -117,8 +118,31 @@ func (s *authService) SignUp(ctx context.Context, req request.SignUpRequest, use
 	return tokens, nil
 }
 
-func (s *authService) SignOut(ctx context.Context, userID int64) {
-	s.authRepo.RevokeTokenByUser(ctx, userID)
+func (s *authService) SignOut(ctx context.Context, userID int64, token string) error {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil
+	}
+
+	hashToken := utils.HashString(token)
+
+	stored, err := s.authRepo.FindByTokenHash(ctx, hashToken)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return response.InternalServerError(err.Error())
+	}
+
+	if stored.UserID != userID {
+		return response.Unauthorized()
+	}
+
+	if err := s.authRepo.DeleteToken(ctx, hashToken); err != nil {
+		return response.InternalServerError(err.Error())
+	}
+
+	return nil
 }
 
 func (s *authService) GoogleSignInURL() (string, string, error) {
@@ -198,15 +222,27 @@ func (s *authService) RefreshToken(ctx context.Context, token string, userAgent 
 		return AuthTokens{}, response.Unauthorized()
 	}
 
-	if err := s.authRepo.DeleteToken(ctx, hashToken); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return AuthTokens{}, response.Unauthorized()
+	var tokens AuthTokens
+	if err := s.authRepo.WithTransaction(ctx, func(repo AuthRepository) error {
+		if err := repo.DeleteToken(ctx, hashToken); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return response.Unauthorized()
+			}
+			return response.InternalServerError(err.Error())
 		}
-		return AuthTokens{}, response.InternalServerError(err.Error())
+
+		issuedTokens, err := s.issueTokens(ctx, repo, stored.UserID, userAgent, ipAddress)
+		if err != nil {
+			return err
+		}
+
+		tokens = issuedTokens
+		return nil
+	}); err != nil {
+		return AuthTokens{}, err
 	}
 
-	return s.issueTokens(ctx, s.authRepo, stored.UserID, userAgent, ipAddress)
-
+	return tokens, nil
 }
 
 func (s *authService) findOrCreateGoogleUser(ctx context.Context, repo AuthRepository, gUser *oauth.GoogleUser) (Auth, error) {
@@ -293,7 +329,13 @@ func (s *authService) issueTokens(ctx context.Context, repo AuthRepository, user
 		return AuthTokens{}, response.InternalServerError(err.Error())
 	}
 
-	refreshToken := s.jwtManager.NewRefreshToken(s.idGen.NewID(), userID, secureToken, userAgent, ipAddress)
+	refreshToken := s.jwtManager.NewRefreshToken(
+		s.idGen.NewID(),
+		userID,
+		secureToken,
+		userAgent,
+		ipAddress,
+	)
 
 	if err := repo.SaveRefreshToken(ctx, refreshToken); err != nil {
 		return AuthTokens{}, response.InternalServerError(err.Error())

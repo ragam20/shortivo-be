@@ -2,11 +2,15 @@ package server
 
 import (
 	"net/http"
-	"shortivo/internal/config"
 	"time"
+
+	"shortivo/internal/config"
 )
 
-const googleOAuthStateCookieName = "googleOAuthState"
+const (
+	googleOAuthStateCookieName = "googleOAuthState"
+	refreshToken               = "refreshToken"
+)
 
 type CookieManager struct {
 	appCfg *config.AppConfig
@@ -20,23 +24,26 @@ func (m *CookieManager) SetRefreshToken(refToken string, expiredAt time.Time) *h
 	maxAge := max(int(time.Until(expiredAt).Seconds()), 0)
 
 	return &http.Cookie{
-		Name:     "refreshToken",
+		Name:     refreshToken,
 		Value:    refToken,
-		Path:     "/api/auth/refresh-token",
+		Path:     "/",
 		Secure:   m.isSecure(),
 		MaxAge:   maxAge,
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	}
 }
 
 func (m *CookieManager) RevokeRefreshToken() *http.Cookie {
 	return &http.Cookie{
-		Name:     "refreshToken",
+		Name:     refreshToken,
 		Value:    "",
-		Path:     "/api/auth/refresh-token",
+		Path:     "/",
 		Secure:   m.isSecure(),
-		MaxAge:   0,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	}
 }
 
@@ -44,7 +51,7 @@ func (m *CookieManager) SetGoogleOAuthState(state string) *http.Cookie {
 	return &http.Cookie{
 		Name:     googleOAuthStateCookieName,
 		Value:    state,
-		Path:     "/api/auth/google/redirect",
+		Path:     "/",
 		Secure:   m.isSecure(),
 		MaxAge:   int((10 * time.Minute).Seconds()),
 		HttpOnly: true,
@@ -56,9 +63,10 @@ func (m *CookieManager) RevokeGoogleOAuthState() *http.Cookie {
 	return &http.Cookie{
 		Name:     googleOAuthStateCookieName,
 		Value:    "",
-		Path:     "/api/auth/google/redirect",
+		Path:     "/",
 		Secure:   m.isSecure(),
-		MaxAge:   0,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}

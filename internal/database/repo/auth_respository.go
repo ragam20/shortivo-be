@@ -95,10 +95,14 @@ func (a *authRepository) RevokeTokenByUser(ctx context.Context, userID int64) er
 }
 
 func (a *authRepository) DeleteToken(ctx context.Context, tokenHash string) error {
-	if err := a.db.WithContext(ctx).
+	tx := a.db.WithContext(ctx).
 		Where("token_hash = ?", tokenHash).
-		Delete(&entity.RefreshTokenEntity{}).Error; err != nil {
-		return err
+		Delete(&entity.RefreshTokenEntity{})
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 	return nil
 }
