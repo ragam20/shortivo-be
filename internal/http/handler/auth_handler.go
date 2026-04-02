@@ -2,12 +2,13 @@ package handler
 
 import (
 	"net/http"
+	"strings"
+	"time"
+
 	"shortivo/internal/app/auth"
 	appHttp "shortivo/internal/http"
 	"shortivo/internal/http/request"
 	"shortivo/internal/http/response"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,7 +72,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	token, ok := refreshTokenFromRequest(c)
+	token, ok := getRefreshToken(c)
 	if !ok {
 		c.Error(response.BadRequestError("refresh token is required"))
 		return
@@ -157,7 +158,12 @@ func (h *AuthHandler) SignOut(c *gin.Context) {
 		return
 	}
 
-	h.authService.SignOut(c.Request.Context(), userID)
+	token, _ := getRefreshToken(c)
+
+	if err := h.authService.SignOut(c.Request.Context(), userID, token); err != nil {
+		c.Error(err)
+		return
+	}
 
 	c.SetCookieData(h.cookieManager.RevokeRefreshToken())
 
@@ -176,21 +182,18 @@ func toSignInResponse(tokens auth.AuthTokens) response.SignInResponse {
 	}
 }
 
-func refreshTokenFromRequest(c *gin.Context) (string, bool) {
+func getRefreshToken(c *gin.Context) (string, bool) {
 	var req request.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err == nil && strings.TrimSpace(req.RefreshToken) != "" {
 		return req.RefreshToken, true
 	}
 
-	authz := strings.TrimSpace(c.GetHeader("Authorization"))
-	if strings.HasPrefix(strings.ToLower(authz), "bearer ") {
-		token := strings.TrimSpace(authz[len("Bearer "):])
-		if token != "" {
-			return token, true
-		}
+	token := strings.TrimSpace(c.GetHeader("X-Refresh-Token"))
+	if token != "" {
+		return token, true
 	}
 
-	token := strings.TrimSpace(c.GetHeader("X-Refresh-Token"))
+	token, _ = c.Cookie("refreshToken")
 	if token != "" {
 		return token, true
 	}
