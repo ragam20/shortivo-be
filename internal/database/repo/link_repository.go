@@ -2,9 +2,10 @@ package repo
 
 import (
 	"context"
+	"time"
+
 	"shortivo/internal/app/link"
 	"shortivo/internal/database/entity"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -132,7 +133,7 @@ func (r *linkRepository) GetCurrentLimit(ctx context.Context, userID int64, star
 	var count int64
 	if err := r.db.WithContext(ctx).
 		Model(&entity.LinkEntity{}).
-		Where("user_Id = ? AND created_at >= ? AND created_at <= ?", userID, startAt, endAt).
+		Where("user_id = ? AND created_at >= ? AND created_at <= ?", userID, startAt, endAt).
 		Count(&count).Error; err != nil {
 		return 0, err
 	}
