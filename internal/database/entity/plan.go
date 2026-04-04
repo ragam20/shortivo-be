@@ -1,8 +1,9 @@
 package entity
 
 import (
-	"shortivo/internal/app/subscription"
 	"time"
+
+	"shortivo/internal/app/subscription"
 )
 
 type PlanEntity struct {

@@ -50,3 +50,16 @@ func (r *subscriptionRepository) CreateSubscription(ctx context.Context, userID 
 
 	return nil
 }
+
+func (r *subscriptionRepository) GetCurrentPlanByUserID(ctx context.Context, userID int64) (subscription.Plan, error) {
+	var sub entity.SubscriptionEntity
+	if err := r.db.WithContext(ctx).
+		Where("user_id = ? AND status = ? AND period_end > ?", userID, subscription.SubscriptionActive, time.Now()).
+		Preload("Plan").
+		Order("period_end DESC").
+		First(&sub).Error; err != nil {
+		return subscription.Plan{}, err
+	}
+
+	return sub.Plan.ToDomain(), nil
+}

@@ -65,6 +65,17 @@ func main() {
 		),
 	)
 
+	appRepoModule := fx.Module("appRepo",
+		fx.Provide(
+			repo.NewAuthRepository,
+			repo.NewAccountRepository,
+			repo.NewLinkRepository,
+			repo.NewPlanRespository,
+			repo.NewAnalyticsRepository,
+			repo.NewSubscriptionRepository,
+		),
+	)
+
 	authModule := fx.Module("auth",
 		fx.Provide(
 			auth.NewJWTManager,
@@ -74,7 +85,6 @@ func main() {
 			oauth.NewGoogleOAuth,
 			oauth.NewGoogleOAuthProvider,
 
-			repo.NewAuthRepository,
 			auth.NewService,
 			handler.NewAuthHandler,
 		),
@@ -82,7 +92,6 @@ func main() {
 
 	accountModule := fx.Module("account",
 		fx.Provide(
-			repo.NewAccountRepository,
 			account.NewService,
 			handler.NewAccountHandler,
 		),
@@ -92,7 +101,6 @@ func main() {
 		fx.Provide(
 			link.NewLinkConfig,
 			link.NewLinkCache,
-			repo.NewLinkRepository,
 			link.NewLinkService,
 			handler.NewLinkHandler,
 		),
@@ -100,7 +108,6 @@ func main() {
 
 	analyticsModule := fx.Module("analytics",
 		fx.Provide(
-			repo.NewAnalyticsRepository,
 			analytics.NewService,
 			handler.NewAnalyticsHandler,
 		),
@@ -108,8 +115,6 @@ func main() {
 
 	subscriptionModule := fx.Module("subscription",
 		fx.Provide(
-			repo.NewSubscriptionRepository,
-			repo.NewPlanRespository,
 			subscription.NewService,
 			handler.NewSubscriptionHandler,
 		),
@@ -120,6 +125,7 @@ func main() {
 		databaseModule,
 		infraModule,
 		appHttpModule,
+		appRepoModule,
 		authModule,
 		accountModule,
 		linkModule,

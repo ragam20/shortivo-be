@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"time"
+
 	"shortivo/internal/app/account"
 	"shortivo/internal/constant"
 	"shortivo/internal/http/response"
@@ -17,29 +19,45 @@ func NewAccountHandler(accService account.AccountService) *AccountHandler {
 	return &AccountHandler{accService: accService}
 }
 
-func (h *AccountHandler) GetProfile(c *gin.Context) {
+func (h *AccountHandler) GetAccount(c *gin.Context) {
 	userID := c.GetInt64(constant.UserIDCtx)
 	if userID <= 0 {
 		c.Error(response.Unauthorized())
 		return
 	}
 
-	profile, err := h.accService.GetProfile(c.Request.Context(), userID)
+	userPlan, err := h.accService.GetAccount(c.Request.Context(), userID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response.SuccessResponse[response.GetProfileResponse]{
-		Status:  http.StatusOK,
-		Message: "get profile success",
-		Data: response.GetProfileResponse{
-			ID:        profile.ID,
-			Username:  profile.Username,
-			Email:     profile.Email,
-			GoogleID:  profile.GoogleID,
-			CreatedAt: profile.CreatedAt,
-			UpdatedAt: profile.UpdatedAt,
+	var planResp *response.PlanResponse
+	if userPlan.Plan != nil {
+		planResp = &response.PlanResponse{
+			ID:                  userPlan.Plan.ID,
+			Title:               userPlan.Plan.Title,
+			Code:                userPlan.Plan.Code,
+			MonthlyLimit:        userPlan.Plan.MonthlyLimit,
+			AnalyticsEnabled:    userPlan.Plan.AnalyticsEnabled,
+			CustomDomainEnabled: userPlan.Plan.CustomDomainEnabled,
+		}
+	}
+
+	c.JSON(http.StatusOK, response.SuccessResponse[response.GetAccountResponse]{
+		Status:    http.StatusOK,
+		Message:   "get user successfully",
+		Timestamp: time.Now().Truncate(time.Second),
+		Data: response.GetAccountResponse{
+			User: response.GetUserResponse{
+				ID:        userPlan.User.ID,
+				Email:     userPlan.User.Email,
+				Username:  userPlan.User.Username,
+				GoogleID:  userPlan.User.GoogleID,
+				CreatedAt: userPlan.User.CreatedAt.Truncate(time.Second),
+				UpdatedAt: userPlan.User.UpdatedAt.Truncate(time.Second),
+			},
+			Plan: planResp,
 		},
 	})
 }
