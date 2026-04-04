@@ -39,9 +39,9 @@ func NewRoutes(
 			authApi.POST("/logout", accessTokenMiddleware.Handle(), authHandler.SignOut)
 		}
 
-		accountApi := api.Group("/accounts", accessTokenMiddleware.Handle())
+		accountApi := api.Group("/users", accessTokenMiddleware.Handle())
 		{
-			accountApi.GET("/profile", accountHandler.GetProfile)
+			accountApi.GET("/account", accountHandler.GetAccount)
 		}
 
 		linkApi := api.Group("/links")

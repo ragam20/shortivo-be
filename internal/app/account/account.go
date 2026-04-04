@@ -15,7 +15,7 @@ type Account struct {
 	CreatedAt time.Time
 }
 
-type GetProfile struct {
+type GetAccount struct {
 	ID       int64
 	Email    string
 	Username string
@@ -23,4 +23,18 @@ type GetProfile struct {
 
 	UpdatedAt time.Time
 	CreatedAt time.Time
+}
+
+type Plan struct {
+	ID                  int64
+	Code                string
+	Title               string
+	MonthlyLimit        int32
+	AnalyticsEnabled    bool
+	CustomDomainEnabled bool
+}
+
+type UserPlan struct {
+	User GetAccount
+	Plan *Plan
 }

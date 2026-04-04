@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"strings"
+
 	"shortivo/internal/app/auth"
 	"shortivo/internal/constant"
 	"shortivo/internal/http/response"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,21 +20,14 @@ func NewAccessTokenMiddleware(jwtManager auth.JwtManager) *AccessTokenMiddleware
 
 func (m *AccessTokenMiddleware) Handle() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		bearer := c.GetHeader(constant.Authorization)
-		if bearer == "" {
+		token := getTokenFromHeader(c)
+		if token == "" {
 			c.Error(response.Unauthorized())
 			c.Abort()
 			return
 		}
 
-		s := strings.Split(bearer, " ")
-		if len(s) < 2 || strings.ToLower(s[0]) != "bearer" {
-			c.Error(response.Unauthorized())
-			c.Abort()
-			return
-		}
-
-		jwtUser, err := m.jwtManager.ValidateAccessToken(s[1])
+		jwtUser, err := m.jwtManager.ValidateAccessToken(token)
 		if err != nil {
 			c.Error(err)
 			c.Abort()
@@ -43,4 +37,18 @@ func (m *AccessTokenMiddleware) Handle() gin.HandlerFunc {
 		c.Set(constant.UserIDCtx, jwtUser.UserId)
 		c.Next()
 	}
+}
+
+func getTokenFromHeader(c *gin.Context) string {
+	bearer := c.GetHeader(constant.Authorization)
+	if bearer == "" {
+		return ""
+	}
+
+	s := strings.Split(bearer, " ")
+	if len(s) < 2 || strings.ToLower(s[0]) != "bearer" {
+		return ""
+	}
+
+	return s[1]
 }
