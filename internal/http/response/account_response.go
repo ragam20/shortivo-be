@@ -16,3 +16,8 @@ type GetAccountResponse struct {
 	User GetUserResponse `json:"user"`
 	Plan *PlanResponse   `json:"plan"`
 }
+
+type GetLinkLimit struct {
+	MonthlyLimit int `json:"monthlyLimit"`
+	CurrLimit    int `json:"currLimit"`
+}

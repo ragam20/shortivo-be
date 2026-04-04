@@ -22,6 +22,28 @@ func NewLinkHandler(linkService link.LinkService) *LinkHandler {
 	}
 }
 
+func (h *LinkHandler) GetMonthlyLimit(c *gin.Context) {
+	userID, exists := userIDFromContext(c)
+	if !exists {
+		c.Error(response.Unauthorized())
+		return
+	}
+
+	resp, err := h.linkService.GetMontlyLimit(c.Request.Context(), userID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(
+		"Get monthly limit successfully",
+		response.GetLinkLimit{
+			MonthlyLimit: resp.MonthlyLimit,
+			CurrLimit:    resp.CurrLimit,
+		},
+	))
+}
+
 func (h *LinkHandler) GetLinks(c *gin.Context) {
 	userID, exists := userIDFromContext(c)
 	if !exists {

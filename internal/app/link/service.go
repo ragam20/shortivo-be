@@ -11,6 +11,7 @@ import (
 	"shortivo/internal/http/response"
 	"shortivo/internal/idgen"
 	"shortivo/internal/logger"
+	"shortivo/internal/utils"
 
 	"gorm.io/gorm"
 )
@@ -21,6 +22,7 @@ type LinkService interface {
 	DeleteLink(ctx context.Context, cmd DeleteLinkCommand) error
 	RedirectLink(ctx context.Context, cmd RedirectLinkCommand) (string, error)
 	GetLinks(ctx context.Context, query GetLinksQuery) GetLinkResult
+	GetMontlyLimit(ctx context.Context, userID int64) (response.GetLinkLimit, error)
 }
 
 type linkService struct {
@@ -322,4 +324,35 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 	}(linkID, cmd.IpAddress, cmd.UserAgent, cmd.Referer, cmd.Device)
 
 	return originalURL, nil
+}
+
+func (s *linkService) GetMontlyLimit(ctx context.Context, userID int64) (response.GetLinkLimit, error) {
+	linkLimit := 0
+
+	pl, err := s.subsRepo.GetCurrentPlanByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			defaultPlan, _ := s.planRepo.GetPlanByCode(ctx, "free")
+
+			linkLimit = int(defaultPlan.MonthlyLimit)
+
+		} else {
+			return response.GetLinkLimit{}, response.InternalServerError(err.Error())
+		}
+	} else {
+		linkLimit = int(pl.MonthlyLimit)
+	}
+
+	dateRange := utils.GetDateRange(time.Now())
+	currLimit, err := s.linkRepo.GetCurrentLimit(ctx, userID, dateRange.From, dateRange.To)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return response.GetLinkLimit{}, response.InternalServerError(err.Error())
+		}
+	}
+
+	return response.GetLinkLimit{
+		MonthlyLimit: linkLimit,
+		CurrLimit:    int(currLimit),
+	}, nil
 }

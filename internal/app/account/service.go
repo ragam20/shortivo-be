@@ -17,12 +17,18 @@ type AccountService interface {
 type accountService struct {
 	accRepo  AccountRepository
 	subsRepo subscription.SubscriptionRepository
+	planRepo subscription.PlanRepository
 }
 
-func NewService(accRepo AccountRepository, subsRepo subscription.SubscriptionRepository) AccountService {
+func NewService(
+	accRepo AccountRepository,
+	subsRepo subscription.SubscriptionRepository,
+	planRepo subscription.PlanRepository,
+) AccountService {
 	return &accountService{
 		accRepo:  accRepo,
 		subsRepo: subsRepo,
+		planRepo: planRepo,
 	}
 }
 
@@ -50,6 +56,16 @@ func (s *accountService) GetAccount(ctx context.Context, userID int64) (UserPlan
 	if err != nil {
 		if err != gorm.ErrRecordNotFound {
 			return UserPlan{}, response.InternalServerError(err.Error())
+		}
+
+		pl, _ = s.planRepo.GetPlanByCode(ctx, "free")
+		plan = &Plan{
+			ID:                  pl.ID,
+			Title:               pl.Title,
+			Code:                pl.Code,
+			MonthlyLimit:        pl.MonthlyLimit,
+			AnalyticsEnabled:    pl.AnalyticsEnabled,
+			CustomDomainEnabled: pl.CustomDomainEnabled,
 		}
 	} else {
 		plan = &Plan{
