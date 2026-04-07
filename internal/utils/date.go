@@ -1,6 +1,22 @@
 package utils
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+func ParseDateLocation(v string) (*time.Time, error) {
+	if v == "" {
+		return nil, nil
+	}
+
+	t, err := time.Parse(time.RFC3339, v)
+	if err != nil {
+		return nil, fmt.Errorf("invalid time format, must be RFC3339")
+	}
+
+	return &t, nil
+}
 
 func ToTimeRFC3339(tm time.Time) string {
 	return tm.Format(time.RFC3339)

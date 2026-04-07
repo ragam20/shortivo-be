@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"shortivo/internal/cache"
 	"time"
+
+	"shortivo/internal/cache"
 )
 
 type LinkCache interface {

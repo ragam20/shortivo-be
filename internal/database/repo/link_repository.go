@@ -18,6 +18,17 @@ func NewLinkRepository(db *gorm.DB) link.LinkRepository {
 	return &linkRepository{db: db}
 }
 
+func (r *linkRepository) GetLinkByID(ctx context.Context, linkID int64) (link.Link, error) {
+	var l entity.LinkEntity
+	if err := r.db.WithContext(ctx).
+		Where("id = ?", linkID).
+		First(&l).Error; err != nil {
+		return link.Link{}, err
+	}
+
+	return l.ToDomain(), nil
+}
+
 func (r *linkRepository) CreateLink(ctx context.Context, domain link.Link) error {
 	link := entity.NewLink(domain)
 	if err := r.db.WithContext(ctx).Create(&link).Error; err != nil {
@@ -27,18 +38,23 @@ func (r *linkRepository) CreateLink(ctx context.Context, domain link.Link) error
 	return nil
 }
 
-func (r *linkRepository) GetTotalItemByUser(ctx context.Context, userID int64) int64 {
+func (r *linkRepository) GetTotalItemByUser(ctx context.Context, userID int64, queries link.LinkQueries) int64 {
 	var totalItem int64
-	r.db.WithContext(ctx).Model(&entity.LinkEntity{}).Where("user_id = ?", userID).Count(&totalItem)
+	r.scopedLinksQuery(ctx, userID, queries).
+		Model(&entity.LinkEntity{}).
+		Count(&totalItem)
 
 	return totalItem
 }
 
-func (r *linkRepository) GetLinks(ctx context.Context, userID int64, offset int, limit int) []link.Link {
+func (r *linkRepository) GetLinks(ctx context.Context, userID int64, queries link.LinkQueries) []link.Link {
 	var entities []entity.LinkEntity
-	r.db.WithContext(ctx).Where("user_id = ?", userID).
-		Offset(offset).
-		Limit(limit).Order("created_at DESC").Find(&entities)
+	db := r.scopedLinksQuery(ctx, userID, queries)
+
+	db = db.Offset(queries.Offset).
+		Limit(queries.Limit).Order("created_at DESC")
+
+	db.Find(&entities)
 
 	result := make([]link.Link, len(entities))
 	for i, v := range entities {
@@ -46,6 +62,27 @@ func (r *linkRepository) GetLinks(ctx context.Context, userID int64, offset int,
 	}
 
 	return result
+}
+
+func (r *linkRepository) scopedLinksQuery(ctx context.Context, userID int64, queries link.LinkQueries) *gorm.DB {
+	db := r.db.WithContext(ctx).Where("user_id = ?", userID)
+
+	if queries.CreatedAtFrom != nil && queries.CreatedAtTo != nil {
+		f := queries.CreatedAtFrom.UTC()
+		t := queries.CreatedAtTo.UTC()
+		db = db.Where("created_at >= ? AND created_at < ?", f, t)
+	}
+
+	if queries.Search != nil && *queries.Search != "" {
+		s := "%" + *queries.Search + "%"
+		db = db.Where(`(
+			COALESCE(title, '') || ' ' ||
+			COALESCE(description, '') || ' ' ||
+			COALESCE(original_url, '')) ILIKE ?
+		`, s)
+	}
+
+	return db
 }
 
 func (r *linkRepository) UpdateLink(ctx context.Context, userID int64, linkID int64, fields map[string]any) (link.Link, error) {

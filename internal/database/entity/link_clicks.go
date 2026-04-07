@@ -1,15 +1,16 @@
 package entity
 
 import (
-	"shortivo/internal/app/link"
 	"time"
+
+	"shortivo/internal/app/link"
 )
 
 type LinkClicksEntity struct {
 	ID        int64      `gorm:"primaryKey;autoIncrement:false"`
 	LinkID    int64      `gorm:"not null;index"`
 	Link      LinkEntity `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:LinkID;references:ID"`
-	IpAddress string     `gorm:"size:64;not null;index"`
+	IPAddress string     `gorm:"size:64;not null;index"`
 	UserAgent string     `gorm:"size:512;not null"`
 	Device    string     `gorm:"size:255;not null"`
 	Referer   string     `gorm:"type:text"`
@@ -25,7 +26,7 @@ func (e *LinkClicksEntity) ToDomain() link.LinkClicks {
 	return link.LinkClicks{
 		ID:        e.ID,
 		LinkID:    e.ID,
-		IpAddress: e.IpAddress,
+		IPAddress: e.IPAddress,
 		UserAgent: e.UserAgent,
 		Device:    e.Device,
 		Referer:   e.Referer,
@@ -37,7 +38,7 @@ func NewLinkClicks(domain link.LinkClicks) LinkClicksEntity {
 	return LinkClicksEntity{
 		ID:        domain.ID,
 		LinkID:    domain.LinkID,
-		IpAddress: domain.IpAddress,
+		IPAddress: domain.IPAddress,
 		UserAgent: domain.UserAgent,
 		Device:    domain.Device,
 		Referer:   domain.Referer,

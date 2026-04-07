@@ -17,11 +17,12 @@ import (
 )
 
 type LinkService interface {
+	GetLinkByID(ctx context.Context, linkID int64) (LinkResult, error)
 	CreateShortLink(ctx context.Context, cmd *CreateLinkCommand) error
 	UpdateLink(ctx context.Context, cmd UpdateLinkCommand) (LinkResult, error)
 	DeleteLink(ctx context.Context, cmd DeleteLinkCommand) error
 	RedirectLink(ctx context.Context, cmd RedirectLinkCommand) (string, error)
-	GetLinks(ctx context.Context, query GetLinksQuery) GetLinkResult
+	GetLinks(ctx context.Context, query LinkQueries) GetLinkResult
 	GetMontlyLimit(ctx context.Context, userID int64) (response.GetLinkLimit, error)
 }
 
@@ -54,13 +55,30 @@ func NewLinkService(cfg *LinkConfig,
 	}
 }
 
-func (s *linkService) GetLinks(ctx context.Context, query GetLinksQuery) GetLinkResult {
-	cacheLink, err := s.cache.GetLinks(ctx, query.UserID, query.Page, query.Limit)
-	if err == nil {
-		return cacheLink
+func (s *linkService) GetLinkByID(ctx context.Context, linkID int64) (LinkResult, error) {
+	link, err := s.linkRepo.GetLinkByID(ctx, linkID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return LinkResult{}, response.NotFoundError("link not found")
+		}
+		return LinkResult{}, response.InternalServerError(err.Error())
 	}
 
-	links := s.linkRepo.GetLinks(ctx, query.UserID, query.Offset, query.Limit)
+	return LinkResult{
+		ID:          link.ID,
+		Title:       link.Title,
+		Description: link.Description,
+		ShortURL:    fmt.Sprintf("%s/%s", s.cfg.ShortenerBaseURL, link.CodeURL),
+		OriginalURL: link.OriginalURL,
+		ExpiredAt:   link.ExpiredAt,
+
+		CreatedAt: link.CreatedAt,
+		UpdatedAt: link.UpdatedAt,
+	}, nil
+}
+
+func (s *linkService) GetLinks(ctx context.Context, query LinkQueries) GetLinkResult {
+	links := s.linkRepo.GetLinks(ctx, query.UserID, query)
 
 	linkItems := make([]LinkResult, len(links))
 	for i, v := range links {
@@ -76,7 +94,7 @@ func (s *linkService) GetLinks(ctx context.Context, query GetLinksQuery) GetLink
 		}
 	}
 
-	totalItem := s.linkRepo.GetTotalItemByUser(ctx, query.UserID)
+	totalItem := s.linkRepo.GetTotalItemByUser(ctx, query.UserID, query)
 
 	linkResult := GetLinkResult{
 		Links:     linkItems,
@@ -84,19 +102,12 @@ func (s *linkService) GetLinks(ctx context.Context, query GetLinksQuery) GetLink
 		TotalPage: (int(totalItem) + query.Limit - 1) / query.Limit,
 	}
 
-	s.cache.SaveListLinks(ctx, query.UserID, query.Page, query.Limit, linkResult)
-
 	return linkResult
 }
 
 func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkCommand) error {
 	if cmd.UserID <= 0 {
 		return response.Unauthorized()
-	}
-
-	cleanTitle := strings.TrimSpace(cmd.Title)
-	if cleanTitle == "" {
-		return response.BadRequestError("title is required")
 	}
 
 	cleanURL := strings.TrimSpace(cmd.URL)
@@ -127,7 +138,7 @@ func (s *linkService) CreateShortLink(ctx context.Context, cmd *CreateLinkComman
 	link := Link{
 		ID:          linkID,
 		UserID:      cmd.UserID,
-		Title:       cleanTitle,
+		Title:       cmd.Title,
 		Description: cmd.Description,
 		OriginalURL: cleanURL,
 		CodeURL:     shortCode,
@@ -195,11 +206,11 @@ func (s *linkService) UpdateLink(ctx context.Context, cmd UpdateLinkCommand) (Li
 
 	fields := make(map[string]any)
 
-	if cmd.Title != "" {
+	if cmd.Title != nil {
 		fields["title"] = cmd.Title
 	}
 
-	if cmd.Description != "" {
+	if cmd.Description != nil {
 		fields["description"] = cmd.Description
 	}
 
@@ -300,7 +311,7 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 		lc := LinkClicks{
 			ID:        s.idGen.NewID(),
 			LinkID:    linkID,
-			IpAddress: ipAddr,
+			IPAddress: ipAddr,
 			UserAgent: userAgent,
 			Referer:   referer,
 			Device:    device,
@@ -321,7 +332,7 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 		}
 
 		s.cache.SaveUniqueClick(trackCtx, linkID, ipAddr, userAgent, referer, device)
-	}(linkID, cmd.IpAddress, cmd.UserAgent, cmd.Referer, cmd.Device)
+	}(linkID, cmd.IPAddress, cmd.UserAgent, cmd.Referer, cmd.Device)
 
 	return originalURL, nil
 }

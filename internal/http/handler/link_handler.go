@@ -4,10 +4,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"shortivo/internal/app/link"
 	"shortivo/internal/http/request"
 	"shortivo/internal/http/response"
+	"shortivo/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +22,40 @@ func NewLinkHandler(linkService link.LinkService) *LinkHandler {
 	return &LinkHandler{
 		linkService: linkService,
 	}
+}
+
+func (h *LinkHandler) GetLinkByID(c *gin.Context) {
+	linkIDParam := c.Param("linkId")
+	if linkIDParam == "" {
+		c.Error(response.BadRequestError("link id is required on param"))
+		return
+	}
+
+	linkID, err := strconv.ParseInt(linkIDParam, 10, 64)
+	if err != nil {
+		c.Error(response.BadRequestError("link id param should be a number"))
+		return
+	}
+
+	linkRes, err := h.linkService.GetLinkByID(c.Request.Context(), linkID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(
+		"get link by id successfully",
+		&response.LinkResponse{
+			ID:          strconv.FormatInt(linkRes.ID, 10),
+			Title:       linkRes.Title,
+			Description: linkRes.Description,
+			ShortURL:    linkRes.ShortURL,
+			OriginalURL: linkRes.OriginalURL,
+			ExpiredAt:   linkRes.ExpiredAt,
+			CreatedAt:   linkRes.CreatedAt,
+			UpdatedAt:   linkRes.UpdatedAt,
+		}),
+	)
 }
 
 func (h *LinkHandler) GetMonthlyLimit(c *gin.Context) {
@@ -57,17 +93,47 @@ func (h *LinkHandler) GetLinks(c *gin.Context) {
 		return
 	}
 
-	result := h.linkService.GetLinks(c.Request.Context(), link.GetLinksQuery{
+	queries := link.LinkQueries{
 		UserID: userID,
 		Offset: pagination.Offset(),
 		Limit:  pagination.Limit,
 		Page:   pagination.Page,
-	})
+	}
+
+	qSearch := c.Query("search")
+	if qSearch != "" {
+		queries.Search = &qSearch
+	}
+
+	var fromTime, toTime *time.Time
+
+	qCreatedAtFrom := c.Query("created_from")
+	qCreatedAtTo := c.Query("created_to")
+	if qCreatedAtFrom != "" && qCreatedAtTo != "" {
+		fromTime, err = utils.ParseDateLocation(qCreatedAtFrom)
+		if err != nil {
+			c.Error(response.BadRequestError(err.Error()))
+			return
+		}
+
+		toTime, err = utils.ParseDateLocation(qCreatedAtTo)
+		if err != nil {
+			c.Error(response.BadRequestError(err.Error()))
+			return
+		}
+	}
+
+	if fromTime != nil && toTime != nil {
+		queries.CreatedAtFrom = fromTime
+		queries.CreatedAtTo = toTime
+	}
+
+	result := h.linkService.GetLinks(c.Request.Context(), queries)
 
 	resp := make([]response.LinkResponse, len(result.Links))
 	for i, v := range result.Links {
 		resp[i] = response.LinkResponse{
-			ID:          v.ID,
+			ID:          strconv.FormatInt(v.ID, 10),
 			Title:       v.Title,
 			ShortURL:    v.ShortURL,
 			OriginalURL: v.OriginalURL,
@@ -113,7 +179,7 @@ func (h *LinkHandler) RedirectShortLink(c *gin.Context) {
 	originalURL, err := h.linkService.RedirectLink(c.Request.Context(), link.RedirectLinkCommand{
 		Code:      code,
 		UserAgent: userAgent,
-		IpAddress: ipAddress,
+		IPAddress: ipAddress,
 		Referer:   referer,
 		Device:    device,
 	})
@@ -184,7 +250,7 @@ func (h *LinkHandler) UpdateLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.NewSuccessResponse("success update link", response.LinkResponse{
-		ID:          result.ID,
+		ID:          strconv.FormatInt(result.ID, 10),
 		Title:       result.Title,
 		Description: result.Description,
 		OriginalURL: result.OriginalURL,
