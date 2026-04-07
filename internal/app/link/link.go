@@ -9,8 +9,8 @@ import "time"
 type Link struct {
 	ID          int64
 	UserID      int64
-	Title       string
-	Description string
+	Title       *string
+	Description *string
 	OriginalURL string
 	CodeURL     string
 	ClickCount  int64
@@ -24,7 +24,7 @@ type Link struct {
 type LinkClicks struct {
 	ID        int64
 	LinkID    int64
-	IpAddress string
+	IPAddress string
 	UserAgent string
 	Device    string
 	Referer   string
@@ -40,16 +40,16 @@ type LinkClicks struct {
 
 type CreateLinkCommand struct {
 	UserID      int64
-	Title       string
+	Title       *string
 	URL         string
-	Description string
+	Description *string
 }
 
 type UpdateLinkCommand struct {
 	UserID      int64
 	LinkID      int64
-	Title       string
-	Description string
+	Title       *string
+	Description *string
 	ExpiredAt   *time.Time
 }
 
@@ -60,7 +60,7 @@ type DeleteLinkCommand struct {
 
 type RedirectLinkCommand struct {
 	Code      string
-	IpAddress string
+	IPAddress string
 	UserAgent string
 	Referer   string
 	Device    string
@@ -70,11 +70,14 @@ type RedirectLinkCommand struct {
 
 // Query
 
-type GetLinksQuery struct {
-	UserID int64
-	Offset int
-	Limit  int
-	Page   int
+type LinkQueries struct {
+	UserID        int64
+	Offset        int
+	Limit         int
+	Page          int
+	Search        *string
+	CreatedAtFrom *time.Time
+	CreatedAtTo   *time.Time
 }
 
 // End Query
@@ -85,8 +88,8 @@ type GetLinksQuery struct {
 
 type LinkResult struct {
 	ID          int64
-	Title       string
-	Description string
+	Title       *string
+	Description *string
 	OriginalURL string
 	ShortURL    string
 	ExpiredAt   *time.Time

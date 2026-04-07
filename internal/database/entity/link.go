@@ -1,8 +1,9 @@
 package entity
 
 import (
-	"shortivo/internal/app/link"
 	"time"
+
+	"shortivo/internal/app/link"
 
 	"gorm.io/gorm"
 )
@@ -11,8 +12,8 @@ type LinkEntity struct {
 	ID          int64      `gorm:"primaryKey;autoIncrement:false"`
 	UserID      int64      `gorm:"not null;index"`
 	User        UserEntity `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
-	Title       string     `gorm:"size:255;not null"`
-	Description string     `gorm:"type:text"`
+	Title       *string    `gorm:"size:255"`
+	Description *string    `gorm:"type:text"`
 	OriginalURL string     `gorm:"column:original_url;type:text;not null"`
 	CodeURL     string     `gorm:"column:code_url;size:32;not null;uniqueIndex"`
 	ClickCount  int64      `gorm:"not null;default:0"`

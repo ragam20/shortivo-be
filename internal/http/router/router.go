@@ -48,6 +48,7 @@ func NewRoutes(
 		{
 			linkApi.GET("", accessTokenMiddleware.Handle(), linkHandler.GetLinks)
 			linkApi.POST("", accessTokenMiddleware.Handle(), linkHandler.CreateShortLink)
+			linkApi.GET("/:linkId", accessTokenMiddleware.Handle(), linkHandler.GetLinkByID)
 			linkApi.PATCH("/:linkId", accessTokenMiddleware.Handle(), linkHandler.UpdateLink)
 			linkApi.DELETE("/:linkId", accessTokenMiddleware.Handle(), linkHandler.DeleteLink)
 			linkApi.GET("/monthly-limit", accessTokenMiddleware.Handle(), linkHandler.GetMonthlyLimit)
