@@ -8,10 +8,8 @@ type GetTotalClicksQuery struct {
 }
 
 type GetTotalEngagementByOvertimeQuery struct {
-	UserID    int64
-	LinkID    int64
-	StartTime time.Time
-	EndTime   time.Time
+	UserID int64
+	LinkID int64
 }
 
 type GetClicksResult struct {
@@ -32,4 +30,9 @@ type GetTotalEngagementByRefererResult struct {
 type GetTotalEngagementByOvertimeResult struct {
 	Date   time.Time
 	Clicks int64
+}
+
+type FilterQuery struct {
+	FromDate *time.Time
+	ToDate   *time.Time
 }

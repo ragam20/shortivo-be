@@ -29,44 +29,46 @@ func NewRoutes(
 			})
 		})
 
-		authApi := api.Group("/auth")
+		authAPI := api.Group("/auth")
 		{
-			authApi.GET("/google", authHandler.GoogleSignIn)
-			authApi.GET("/google/redirect", authHandler.GoogleCallback)
-			authApi.POST("/signin", authHandler.SignIn)
-			authApi.POST("/signup", authHandler.SignUp)
-			authApi.POST("/refresh-token", authHandler.RefreshToken)
-			authApi.POST("/logout", accessTokenMiddleware.Handle(), authHandler.SignOut)
+			authAPI.GET("/google", authHandler.GoogleSignIn)
+			authAPI.GET("/google/redirect", authHandler.GoogleCallback)
+			authAPI.POST("/signin", authHandler.SignIn)
+			authAPI.POST("/signup", authHandler.SignUp)
+			authAPI.POST("/refresh-token", authHandler.RefreshToken)
+			authAPI.POST("/logout", accessTokenMiddleware.Handle(), authHandler.SignOut)
 		}
 
-		accountApi := api.Group("/users", accessTokenMiddleware.Handle())
+		accountAPI := api.Group("/users", accessTokenMiddleware.Handle())
 		{
-			accountApi.GET("/account", accountHandler.GetAccount)
+			accountAPI.GET("/account", accountHandler.GetAccount)
 		}
 
-		linkApi := api.Group("/links")
+		linkAPI := api.Group("/links")
 		{
-			linkApi.GET("", accessTokenMiddleware.Handle(), linkHandler.GetLinks)
-			linkApi.POST("", accessTokenMiddleware.Handle(), linkHandler.CreateShortLink)
-			linkApi.GET("/:linkId", accessTokenMiddleware.Handle(), linkHandler.GetLinkByID)
-			linkApi.PATCH("/:linkId", accessTokenMiddleware.Handle(), linkHandler.UpdateLink)
-			linkApi.DELETE("/:linkId", accessTokenMiddleware.Handle(), linkHandler.DeleteLink)
-			linkApi.GET("/monthly-limit", accessTokenMiddleware.Handle(), linkHandler.GetMonthlyLimit)
+			linkAPI.GET("", accessTokenMiddleware.Handle(), linkHandler.GetLinks)
+			linkAPI.POST("", accessTokenMiddleware.Handle(), linkHandler.CreateShortLink)
+			linkAPI.GET("/:linkId", accessTokenMiddleware.Handle(), linkHandler.GetLinkByID)
+			linkAPI.PATCH("/:linkId", accessTokenMiddleware.Handle(), linkHandler.UpdateLink)
+			linkAPI.DELETE("/:linkId", accessTokenMiddleware.Handle(), linkHandler.DeleteLink)
+			linkAPI.GET("/monthly-limit", accessTokenMiddleware.Handle(), linkHandler.GetMonthlyLimit)
 		}
 
-		subscriptionApi := api.Group("/subscriptions")
+		subscriptionAPI := api.Group("/subscriptions")
 		{
-			subscriptionApi.GET("/current", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentSubscription)
-			subscriptionApi.GET("/plan", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentPlan)
-			subscriptionApi.POST("/cancel/:id", accessTokenMiddleware.Handle(), subscriptionHandler.CancelSubsription)
+			subscriptionAPI.GET("/current", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentSubscription)
+			subscriptionAPI.GET("/plan", accessTokenMiddleware.Handle(), subscriptionHandler.GetCurrentPlan)
+			subscriptionAPI.POST("/cancel/:id", accessTokenMiddleware.Handle(), subscriptionHandler.CancelSubsription)
 		}
 
-		analyticsApi := api.Group("/analytics", accessTokenMiddleware.Handle())
+		analyticsAPI := api.Group("/analytics", accessTokenMiddleware.Handle())
 		{
-			analyticsApi.GET("/:linkId/total-clicks", analyticsHandler.GetTotalClicks)
-			analyticsApi.GET("/:linkId/referer", analyticsHandler.GetEnagementByReferer)
-			analyticsApi.GET("/:linkId/device", analyticsHandler.GetEngagementByDevices)
-			analyticsApi.GET("/:linkId/overtime", analyticsHandler.GetTotalEngagementByOvertime)
+			analyticsAPI.GET("/clicks", analyticsHandler.GetTotalClicks)
+			analyticsAPI.GET("/link", analyticsHandler.GetTotalCreatedLink)
+			analyticsAPI.GET("/:linkId/clicks", analyticsHandler.GetTotalClicksByLinkID)
+			analyticsAPI.GET("/:linkId/referrer", analyticsHandler.GetEnagementByReferrer)
+			analyticsAPI.GET("/:linkId/device", analyticsHandler.GetEngagementByDevices)
+			analyticsAPI.GET("/:linkId/overtime", analyticsHandler.GetTotalEngagementByOvertime)
 		}
 	}
 

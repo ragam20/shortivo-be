@@ -75,6 +75,8 @@ type LinkQueries struct {
 	Offset        int
 	Limit         int
 	Page          int
+	SortBy        string
+	Order         string
 	Search        *string
 	CreatedAtFrom *time.Time
 	CreatedAtTo   *time.Time
@@ -92,6 +94,8 @@ type LinkResult struct {
 	Description *string
 	OriginalURL string
 	ShortURL    string
+	ClickCount  int64
+	UniqueClick int64
 	ExpiredAt   *time.Time
 
 	CreatedAt time.Time

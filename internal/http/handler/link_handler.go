@@ -100,6 +100,11 @@ func (h *LinkHandler) GetLinks(c *gin.Context) {
 		Page:   pagination.Page,
 	}
 
+	qSortBy := c.Query("sortBy")
+	if qSortBy != "" {
+		queries.SortBy = qSortBy
+	}
+
 	qSearch := c.Query("search")
 	if qSearch != "" {
 		queries.Search = &qSearch
@@ -110,13 +115,13 @@ func (h *LinkHandler) GetLinks(c *gin.Context) {
 	qCreatedAtFrom := c.Query("created_from")
 	qCreatedAtTo := c.Query("created_to")
 	if qCreatedAtFrom != "" && qCreatedAtTo != "" {
-		fromTime, err = utils.ParseDateLocation(qCreatedAtFrom)
+		fromTime, err = utils.ParseRFC3339Time(qCreatedAtFrom)
 		if err != nil {
 			c.Error(response.BadRequestError(err.Error()))
 			return
 		}
 
-		toTime, err = utils.ParseDateLocation(qCreatedAtTo)
+		toTime, err = utils.ParseRFC3339Time(qCreatedAtTo)
 		if err != nil {
 			c.Error(response.BadRequestError(err.Error()))
 			return
@@ -137,6 +142,8 @@ func (h *LinkHandler) GetLinks(c *gin.Context) {
 			Title:       v.Title,
 			ShortURL:    v.ShortURL,
 			OriginalURL: v.OriginalURL,
+			ClickCount:  v.ClickCount,
+			UniqueClick: v.UniqueClick,
 			Description: v.Description,
 			ExpiredAt:   v.ExpiredAt,
 			CreatedAt:   v.CreatedAt,

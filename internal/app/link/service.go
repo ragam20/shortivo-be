@@ -87,6 +87,8 @@ func (s *linkService) GetLinks(ctx context.Context, query LinkQueries) GetLinkRe
 			Title:       v.Title,
 			OriginalURL: v.OriginalURL,
 			Description: v.Description,
+			ClickCount:  v.ClickCount,
+			UniqueClick: v.UniqueClick,
 			ShortURL:    fmt.Sprintf("%s/%s", s.cfg.ShortenerBaseURL, v.CodeURL),
 			ExpiredAt:   v.ExpiredAt,
 			CreatedAt:   v.CreatedAt,
@@ -299,15 +301,6 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 		trackCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 
-		if err := s.linkRepo.IncrementClickCount(trackCtx, linkID); err != nil {
-			s.logger.Error("error increment click count", err, nil)
-			return
-		}
-
-		if s.cache.IsUniqueClick(trackCtx, linkID, ipAddr, userAgent, referer, device) {
-			return
-		}
-
 		lc := LinkClicks{
 			ID:        s.idGen.NewID(),
 			LinkID:    linkID,
@@ -315,6 +308,12 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 			UserAgent: userAgent,
 			Referer:   referer,
 			Device:    device,
+		}
+
+		if !s.cache.IsUniqueClick(trackCtx, linkID, ipAddr, userAgent, referer, device) {
+			if err := s.linkRepo.IncrementUniqueClick(trackCtx, linkID); err != nil {
+				return
+			}
 		}
 
 		if err := s.linkRepo.TrackClickURL(trackCtx, lc); err != nil {
@@ -326,8 +325,7 @@ func (s *linkService) RedirectLink(ctx context.Context, cmd RedirectLinkCommand)
 			return
 		}
 
-		if err := s.linkRepo.IncrementUniqueClick(trackCtx, linkID); err != nil {
-			s.logger.Error("error increment unique click count", err, nil)
+		if err := s.linkRepo.IncrementClickCount(trackCtx, linkID); err != nil {
 			return
 		}
 
@@ -355,7 +353,7 @@ func (s *linkService) GetMontlyLimit(ctx context.Context, userID int64) (respons
 	}
 
 	dateRange := utils.GetDateRange(time.Now())
-	currLimit, err := s.linkRepo.GetCurrentLimit(ctx, userID, dateRange.From, dateRange.To)
+	currLimit, err := s.linkRepo.GetCurrentLimit(ctx, userID, *dateRange.From, *dateRange.To)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return response.GetLinkLimit{}, response.InternalServerError(err.Error())
