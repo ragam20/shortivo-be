@@ -11,7 +11,7 @@ type LinkClicksEntity struct {
 	LinkID    int64      `gorm:"not null;index"`
 	Link      LinkEntity `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:LinkID;references:ID"`
 	IPAddress string     `gorm:"size:64;not null;index"`
-	UserAgent string     `gorm:"size:512;not null"`
+	UserAgent string     `gorm:"size:512;not null;index"`
 	Device    string     `gorm:"size:255;not null"`
 	Referer   string     `gorm:"type:text"`
 

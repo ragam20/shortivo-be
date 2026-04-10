@@ -7,6 +7,8 @@ type LinkResponse struct {
 	Title       *string    `json:"title"`
 	Description *string    `json:"description"`
 	OriginalURL string     `json:"originalURL"`
+	ClickCount  int64      `json:"clickCount"`
+	UniqueClick int64      `json:"uniqueClick"`
 	ShortURL    string     `json:"shortURL"`
 	ExpiredAt   *time.Time `json:"expiredAt"`
 

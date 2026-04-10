@@ -11,10 +11,12 @@ import (
 )
 
 type AnalyticsService interface {
-	GetTotalClicks(ctx context.Context, query GetTotalClicksQuery) (GetClicksResult, error)
-	GetEngagementByDevices(ctx context.Context, query GetTotalClicksQuery) ([]GetTotalEngagementByDeviceResult, error)
-	GetEngagementByReferer(ctx context.Context, query GetTotalClicksQuery) ([]GetTotalEngagementByRefererResult, error)
-	GetTotalEngagementByOvertime(ctx context.Context, query GetTotalEngagementByOvertimeQuery) ([]GetTotalEngagementByOvertimeResult, error)
+	GetTotalCreatedLink(ctx context.Context, userID int64, filter FilterQuery) (int64, error)
+	GetTotalClicks(ctx context.Context, userID int64, filter FilterQuery) (GetClicksResult, error)
+	GetTotalClicksByLinkID(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) (GetClicksResult, error)
+	GetEngagementByDevices(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) ([]GetTotalEngagementByDeviceResult, error)
+	GetEngagementByReferer(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) ([]GetTotalEngagementByRefererResult, error)
+	GetTotalEngagementByOvertime(ctx context.Context, query GetTotalEngagementByOvertimeQuery, filter FilterQuery) ([]GetTotalEngagementByOvertimeResult, error)
 }
 
 type analyticsService struct {
@@ -26,7 +28,42 @@ func NewService(analitycsRepo AnalyticsRepository, subsRepo subscription.Subscri
 	return &analyticsService{analyticsRepo: analitycsRepo, subsRepo: subsRepo}
 }
 
-func (s *analyticsService) GetTotalClicks(ctx context.Context, query GetTotalClicksQuery) (GetClicksResult, error) {
+func (s *analyticsService) GetTotalCreatedLink(ctx context.Context, userID int64, filter FilterQuery) (int64, error) {
+	total, err := s.analyticsRepo.GetTotalCreatedLink(ctx, userID, filter)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, response.BadRequestError("links not found")
+		}
+		return 0, response.InternalServerError(err.Error())
+	}
+
+	return total, nil
+}
+
+func (s *analyticsService) GetTotalClicks(ctx context.Context, userID int64, filter FilterQuery) (GetClicksResult, error) {
+	clickCount, err := s.analyticsRepo.GetTotalClicks(ctx, userID, filter)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return GetClicksResult{}, response.BadRequestError("click event not found")
+		}
+		return GetClicksResult{}, response.InternalServerError(err.Error())
+	}
+
+	uniqueCount, err := s.analyticsRepo.GetUniqueClicks(ctx, userID, filter)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return GetClicksResult{}, response.BadRequestError("unique click event not found")
+		}
+		return GetClicksResult{}, response.InternalServerError(err.Error())
+	}
+
+	return GetClicksResult{
+		TotalClick:  clickCount,
+		UniqueClick: uniqueCount,
+	}, nil
+}
+
+func (s *analyticsService) GetTotalClicksByLinkID(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) (GetClicksResult, error) {
 	if query.UserID <= 0 {
 		return GetClicksResult{}, response.Unauthorized()
 	}
@@ -43,17 +80,17 @@ func (s *analyticsService) GetTotalClicks(ctx context.Context, query GetTotalCli
 		return GetClicksResult{}, response.InternalServerError("error GetActiveSubscriptionByUser")
 	}
 
-	result, err := s.analyticsRepo.GetClicks(ctx, query.LinkID, query.UserID)
+	result, err := s.analyticsRepo.GetClicks(ctx, query.LinkID, query.UserID, filter)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return GetClicksResult{}, response.InternalServerError("error GetTotalClicks")
+			return GetClicksResult{}, response.InternalServerError(err.Error())
 		}
 	}
 
 	return result, nil
 }
 
-func (s *analyticsService) GetEngagementByDevices(ctx context.Context, query GetTotalClicksQuery) ([]GetTotalEngagementByDeviceResult, error) {
+func (s *analyticsService) GetEngagementByDevices(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) ([]GetTotalEngagementByDeviceResult, error) {
 	if query.UserID <= 0 {
 		return []GetTotalEngagementByDeviceResult{}, response.Unauthorized()
 	}
@@ -70,7 +107,7 @@ func (s *analyticsService) GetEngagementByDevices(ctx context.Context, query Get
 		return []GetTotalEngagementByDeviceResult{}, response.InternalServerError("error GetActiveSubscriptionByUser")
 	}
 
-	result, err := s.analyticsRepo.GetEngagementByDevices(ctx, query.LinkID)
+	result, err := s.analyticsRepo.GetEngagementByDevices(ctx, query.LinkID, query.UserID, filter)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return []GetTotalEngagementByDeviceResult{}, response.InternalServerError("error GetTotalEngagementByDeviceResult")
@@ -80,7 +117,7 @@ func (s *analyticsService) GetEngagementByDevices(ctx context.Context, query Get
 	return result, nil
 }
 
-func (s *analyticsService) GetEngagementByReferer(ctx context.Context, query GetTotalClicksQuery) ([]GetTotalEngagementByRefererResult, error) {
+func (s *analyticsService) GetEngagementByReferer(ctx context.Context, query GetTotalClicksQuery, filter FilterQuery) ([]GetTotalEngagementByRefererResult, error) {
 	if query.UserID <= 0 {
 		return []GetTotalEngagementByRefererResult{}, response.Unauthorized()
 	}
@@ -97,7 +134,7 @@ func (s *analyticsService) GetEngagementByReferer(ctx context.Context, query Get
 		return []GetTotalEngagementByRefererResult{}, response.InternalServerError("error GetActiveSubscriptionByUser")
 	}
 
-	result, err := s.analyticsRepo.GetEngagementByReferer(ctx, query.LinkID)
+	result, err := s.analyticsRepo.GetEngagementByReferer(ctx, query.LinkID, query.UserID, filter)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return []GetTotalEngagementByRefererResult{}, response.InternalServerError("error GetTotalEngagementByRefererResult")
@@ -107,7 +144,7 @@ func (s *analyticsService) GetEngagementByReferer(ctx context.Context, query Get
 	return result, nil
 }
 
-func (s *analyticsService) GetTotalEngagementByOvertime(ctx context.Context, query GetTotalEngagementByOvertimeQuery) ([]GetTotalEngagementByOvertimeResult, error) {
+func (s *analyticsService) GetTotalEngagementByOvertime(ctx context.Context, query GetTotalEngagementByOvertimeQuery, filter FilterQuery) ([]GetTotalEngagementByOvertimeResult, error) {
 	if query.UserID <= 0 {
 		return []GetTotalEngagementByOvertimeResult{}, response.Unauthorized()
 	}
@@ -124,7 +161,7 @@ func (s *analyticsService) GetTotalEngagementByOvertime(ctx context.Context, que
 		return []GetTotalEngagementByOvertimeResult{}, response.InternalServerError("error GetActiveSubscriptionByUser")
 	}
 
-	result, err := s.analyticsRepo.GetEngagementByOvertime(ctx, query.LinkID, query.StartTime, query.EndTime)
+	result, err := s.analyticsRepo.GetEngagementByOvertime(ctx, query.LinkID, query.UserID, filter)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return []GetTotalEngagementByOvertimeResult{}, response.InternalServerError("error GetTotalEngagementByOvertime")

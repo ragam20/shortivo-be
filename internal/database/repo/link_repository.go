@@ -51,8 +51,17 @@ func (r *linkRepository) GetLinks(ctx context.Context, userID int64, queries lin
 	var entities []entity.LinkEntity
 	db := r.scopedLinksQuery(ctx, userID, queries)
 
+	order, _ := parseSort(
+		queries.SortBy,
+		"links.created_at DESC",
+		map[string]string{
+			"created_at":  "links.created_at",
+			"click_count": "links.click_count",
+		},
+	)
+
 	db = db.Offset(queries.Offset).
-		Limit(queries.Limit).Order("created_at DESC")
+		Limit(queries.Limit).Order(order)
 
 	db.Find(&entities)
 
