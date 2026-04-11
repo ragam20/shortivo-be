@@ -10,6 +10,7 @@ type AppConfig struct {
 	NodeID           int64         `mapstructure:"node_id"`
 	RequestTimeout   time.Duration `mapstructure:"request_timeout"`
 	ShortenerBaseURL string        `mapstructure:"shortener_base_url"`
+	FrontendRedirect string        `mapstructure:"frontend_redirect"`
 }
 
 type JwtConfig struct {

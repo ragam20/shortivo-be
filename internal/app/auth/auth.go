@@ -16,5 +16,6 @@ type Auth struct {
 type AuthTokens struct {
 	AccessToken  string
 	RefreshToken string
+	AccessExp    time.Time
 	RefreshExp   time.Time
 }

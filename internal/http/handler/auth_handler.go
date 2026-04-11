@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"shortivo/internal/app/auth"
+	"shortivo/internal/config"
 	appHttp "shortivo/internal/http"
 	"shortivo/internal/http/request"
 	"shortivo/internal/http/response"
@@ -16,12 +17,14 @@ import (
 type AuthHandler struct {
 	cookieManager *appHttp.CookieManager
 	authService   auth.AuthService
+	appConfig     *config.AppConfig
 }
 
-func NewAuthHandler(authService auth.AuthService, cookieManager *appHttp.CookieManager) *AuthHandler {
+func NewAuthHandler(authService auth.AuthService, cookieManager *appHttp.CookieManager, appConfig *config.AppConfig) *AuthHandler {
 	return &AuthHandler{
 		authService:   authService,
 		cookieManager: cookieManager,
+		appConfig:     appConfig,
 	}
 }
 
@@ -39,6 +42,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 	}
 
 	c.SetCookieData(h.cookieManager.SetRefreshToken(tokens.RefreshToken, tokens.RefreshExp))
+	c.SetCookieData(h.cookieManager.SetAccessToken(tokens.AccessToken, tokens.AccessExp))
 
 	c.JSON(http.StatusOK, response.SuccessResponse[response.SignInResponse]{
 		Status:    http.StatusOK,
@@ -62,6 +66,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 	}
 
 	c.SetCookieData(h.cookieManager.SetRefreshToken(tokens.RefreshToken, tokens.RefreshExp))
+	c.SetCookieData(h.cookieManager.SetAccessToken(tokens.AccessToken, tokens.AccessExp))
 
 	c.JSON(http.StatusOK, response.SuccessResponse[response.SignInResponse]{
 		Status:    http.StatusOK,
@@ -85,6 +90,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	c.SetCookieData(h.cookieManager.SetRefreshToken(tokens.RefreshToken, tokens.RefreshExp))
+	c.SetCookieData(h.cookieManager.SetAccessToken(tokens.AccessToken, tokens.AccessExp))
 
 	c.JSON(http.StatusOK, response.SuccessResponse[response.SignInResponse]{
 		Status:    http.StatusOK,
@@ -142,13 +148,9 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	c.SetCookieData(h.cookieManager.SetRefreshToken(tokens.RefreshToken, tokens.RefreshExp))
+	c.SetCookieData(h.cookieManager.SetAccessToken(tokens.AccessToken, tokens.AccessExp))
 
-	c.JSON(http.StatusOK, response.SuccessResponse[response.SignInResponse]{
-		Status:    http.StatusOK,
-		Message:   "success",
-		Timestamp: time.Now().UTC(),
-		Data:      toSignInResponse(tokens),
-	})
+	c.Redirect(http.StatusFound, h.appConfig.FrontendRedirect)
 }
 
 func (h *AuthHandler) SignOut(c *gin.Context) {
@@ -166,6 +168,7 @@ func (h *AuthHandler) SignOut(c *gin.Context) {
 	}
 
 	c.SetCookieData(h.cookieManager.RevokeRefreshToken())
+	c.SetCookieData(h.cookieManager.RevokeAccessToken())
 
 	c.JSON(http.StatusOK, response.SuccessResponse[bool]{
 		Status:    http.StatusOK,
