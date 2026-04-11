@@ -98,7 +98,7 @@ func (s *authService) SignUp(ctx context.Context, req request.SignUpRequest, use
 	if err := s.authRepo.WithTransaction(ctx, func(repo AuthRepository) error {
 		if err := repo.SignUp(ctx, auth); err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return response.BadRequestError("user already exists")
+				return response.BadRequestError("user already exists or try login with google")
 			}
 
 			return response.InternalServerError(fmt.Sprintf("error signup: %s", err.Error()))

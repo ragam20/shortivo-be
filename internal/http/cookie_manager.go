@@ -10,6 +10,7 @@ import (
 const (
 	googleOAuthStateCookieName = "googleOAuthState"
 	refreshTokenCookie         = "refreshToken"
+	accessTokenCookie          = "authSession"
 )
 
 type CookieManager struct {
@@ -18,6 +19,32 @@ type CookieManager struct {
 
 func NewCookieManager(appCfg *config.AppConfig) *CookieManager {
 	return &CookieManager{appCfg: appCfg}
+}
+
+func (m *CookieManager) SetAccessToken(accessToken string, expiredAt time.Time) *http.Cookie {
+	maxAge := max(int(time.Until(expiredAt).Seconds()), 0)
+
+	return &http.Cookie{
+		Name:     accessTokenCookie,
+		Value:    accessToken,
+		Path:     "/",
+		Secure:   m.isSecure(),
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func (m *CookieManager) RevokeAccessToken() *http.Cookie {
+	return &http.Cookie{
+		Name:     accessTokenCookie,
+		Value:    "",
+		Path:     "/",
+		Secure:   m.isSecure(),
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+		SameSite: http.SameSiteLaxMode,
+	}
 }
 
 func (m *CookieManager) SetRefreshToken(refToken string, expiredAt time.Time) *http.Cookie {

@@ -20,11 +20,15 @@ func NewAccessTokenMiddleware(jwtManager auth.JwtManager) *AccessTokenMiddleware
 
 func (m *AccessTokenMiddleware) Handle() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := getTokenFromHeader(c)
+		token, _ := c.Cookie("authSession")
+
 		if token == "" {
-			c.Error(response.Unauthorized())
-			c.Abort()
-			return
+			token = getTokenFromHeader(c)
+			if token == "" {
+				c.Error(response.Unauthorized())
+				c.Abort()
+				return
+			}
 		}
 
 		jwtUser, err := m.jwtManager.ValidateAccessToken(token)
