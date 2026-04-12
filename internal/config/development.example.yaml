@@ -7,6 +7,7 @@ app:
   request_timeout: 5s
   shortener_base_url:
   refresh_token_api:
+  frontend_redirect:
 
 db:
   host:
@@ -23,9 +24,7 @@ jwt:
   refresh_exp:
 
 redis:
-  host:
-  port:
-  password:
+  url:
 
 google_oauth:
   client_id:
