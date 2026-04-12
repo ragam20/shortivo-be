@@ -52,7 +52,7 @@ func main() {
 		),
 	)
 
-	appHttpModule := fx.Module("apphttp",
+	appHTTPModule := fx.Module("apphttp",
 		fx.Provide(
 			middleware.NewRequestTimeoutMiddleware,
 			middleware.NewErrorMiddleware,
@@ -124,7 +124,7 @@ func main() {
 		configModule,
 		databaseModule,
 		infraModule,
-		appHttpModule,
+		appHTTPModule,
 		appRepoModule,
 		authModule,
 		accountModule,
