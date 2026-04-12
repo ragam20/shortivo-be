@@ -23,8 +23,6 @@ jobs:
       - name: Download dependencies
         run: go mod tidy
 
-      - name: Verify dependencies
-
       - name: Build
         run: go build -v ./...
 
