@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"os"
+	"strconv"
+
 	"shortivo/internal/config"
 	"shortivo/internal/logger"
 
@@ -17,9 +19,19 @@ func NewHTTPServer(
 	ge *gin.Engine,
 	log logger.Logger,
 ) *http.Server {
+	port := ""
+	if p := os.Getenv("PORT"); p != "" {
+		port = p
+	}
+
+	if port == "" {
+		if cfg.Port != 0 {
+			port = strconv.Itoa(cfg.Port)
+		}
+	}
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Addr:    port,
 		Handler: ge,
 	}
 
