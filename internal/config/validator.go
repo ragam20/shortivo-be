@@ -109,12 +109,8 @@ func validateJWTConfig(cfg JwtConfig, errs *[]string) {
 }
 
 func validateRedisConfig(cfg RedisConfig, errs *[]string) {
-	if strings.TrimSpace(cfg.Host) == "" {
-		*errs = append(*errs, "redis.host is required")
-	}
-
-	if cfg.Port <= 0 || cfg.Port > 65535 {
-		*errs = append(*errs, "redis.port must be between 1 and 65535")
+	if strings.TrimSpace(cfg.URL) == "" {
+		*errs = append(*errs, "redis.url is required")
 	}
 }
 
