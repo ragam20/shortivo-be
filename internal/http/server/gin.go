@@ -3,15 +3,21 @@ package server
 import (
 	"time"
 
+	"shortivo/internal/http/middleware"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func NewGinEngine() *gin.Engine {
+func NewGinEngine(
+	requestTimeout *middleware.RequestTimeoutMiddleware,
+	errorHandling *middleware.ErrorMiddleware,
+	recovery *middleware.RecoveryMiddleware,
+) *gin.Engine {
 	cors := cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "Timezone"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -19,7 +25,11 @@ func NewGinEngine() *gin.Engine {
 
 	r := gin.New()
 	r.Use(
+		gin.Logger(),
+		recovery.Handle(),
 		cors,
+		requestTimeout.Handle(),
+		errorHandling.Handle(),
 	)
 
 	return r

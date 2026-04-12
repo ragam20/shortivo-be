@@ -1,22 +1,47 @@
 package entity
 
-import "time"
-
-type SubscriptionStatus string
-
-const (
-	SubscriptionActive    SubscriptionStatus = "active"
-	SubscriptionExpired   SubscriptionStatus = "expired"
-	SubscriptionCancelled SubscriptionStatus = "cancelled"
+import (
+	"shortivo/internal/app/subscription"
+	"time"
 )
 
 type SubscriptionEntity struct {
-	ID        int64 `gorm:"primaryKey"`
-	UserID    int64
-	PlanID    int64
-	PeriodEnd time.Time
-	Status    SubscriptionStatus `gorm:"type:varchar(20);not null;default:'active'"`
+	ID        int64      `gorm:"primaryKey;autoIncrement:false"`
+	UserID    int64      `gorm:"not null;index:idx_subscription_user_status"`
+	User      UserEntity `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
+	PlanID    int64      `gorm:"not null;index"`
+	Plan      PlanEntity `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;foreignKey:PlanID;references:ID"`
+	PeriodEnd time.Time  `gorm:"not null;index"`
+	Status    string     `gorm:"type:varchar(20);not null;default:'active';index:idx_subscription_user_status;check:status IN ('active','expired','cancelled')"`
 
 	UpdatedAt time.Time
 	CreatedAt time.Time
+}
+
+func (SubscriptionEntity) TableName() string {
+	return "subscriptions"
+}
+
+func NewSubscriptionEntity(domain subscription.Subscription) SubscriptionEntity {
+	return SubscriptionEntity{
+		ID:        domain.ID,
+		UserID:    domain.UserID,
+		PlanID:    domain.PlanID,
+		PeriodEnd: domain.PeriodEnd,
+		Status:    string(domain.Status),
+		CreatedAt: domain.CreatedAt,
+		UpdatedAt: domain.UpdatedAt,
+	}
+}
+
+func (e SubscriptionEntity) ToDomain() subscription.Subscription {
+	return subscription.Subscription{
+		ID:        e.ID,
+		UserID:    e.UserID,
+		PlanID:    e.PlanID,
+		Status:    subscription.SubscriptionStatus(e.Status),
+		PeriodEnd: e.PeriodEnd,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+	}
 }

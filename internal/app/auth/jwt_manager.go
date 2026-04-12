@@ -1,36 +1,34 @@
 package auth
 
 import (
-	"errors"
 	"shortivo/internal/config"
+	"shortivo/internal/http/response"
+	"shortivo/internal/utils"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func NewJWTConfig(cfg *config.Config) config.JwtConfig {
-	return cfg.JWT
-}
-
 type JwtUser struct {
-	UserId uint64
+	UserId int64
 	Claims *jwt.MapClaims
 }
 
 type JwtManager interface {
-	GenerateAccessToken(userId uint64) (string, error)
+	GenerateAccessToken(userId int64) (string, error)
 	ValidateAccessToken(accessToken string) (*JwtUser, error)
+	NewRefreshToken(id int64, userID int64, token string, userAgent string, ipAddr string) RefreshToken
 }
 
 type jwtManager struct {
-	cfg config.JwtConfig
+	cfg *config.JwtConfig
 }
 
-func NewJWTManager(cfg config.JwtConfig) JwtManager {
+func NewJWTManager(cfg *config.JwtConfig) JwtManager {
 	return &jwtManager{cfg: cfg}
 }
 
-func (jm *jwtManager) GenerateAccessToken(userId uint64) (string, error) {
+func (jm *jwtManager) GenerateAccessToken(userId int64) (string, error) {
 	claims := jwt.MapClaims{
 		"userId": userId,
 		"exp":    time.Now().Add(jm.cfg.Expiration).Unix(),
@@ -42,22 +40,35 @@ func (jm *jwtManager) GenerateAccessToken(userId uint64) (string, error) {
 func (jm *jwtManager) ValidateAccessToken(accessToken string) (*JwtUser, error) {
 	claims, err := jm.validateJWT(accessToken, jm.cfg.AccessSecret)
 	if err != nil {
-		return nil, errors.New("Unauthorized")
+		return nil, response.Unauthorized()
 	}
 
 	if !jm.checkClaims(claims, "userId", "exp") {
-		return nil, errors.New("invalid token")
+		return nil, response.BadRequestError("invalid jwt")
 	}
 
 	uidFloat, ok := claims["userId"].(float64)
 	if !ok {
-		return nil, errors.New("invalid userId claim")
+		return nil, response.BadRequestError("invalid userId claim")
 	}
 
 	return &JwtUser{
-		UserId: uint64(uidFloat),
+		UserId: int64(uidFloat),
 		Claims: &claims,
 	}, nil
+}
+
+func (jm *jwtManager) NewRefreshToken(id int64, userID int64, token string, userAgent string, ipAddr string) RefreshToken {
+	refToken := RefreshToken{
+		ID:        id,
+		UserID:    userID,
+		TokenHash: utils.HashString(token),
+		UserAgent: userAgent,
+		IpAddress: ipAddr,
+		ExpiredAt: time.Now().Add(jm.cfg.RefreshExp),
+	}
+
+	return refToken
 }
 
 func (jm *jwtManager) generateJWT(jwtClaims jwt.MapClaims, secret string) (string, error) {
@@ -73,13 +84,13 @@ func (jm *jwtManager) validateJWT(currToken string, secret string) (jwt.MapClaim
 		return []byte(secret), nil
 	})
 	if err != nil || !j.Valid {
-		return nil, err
+		return nil, response.BadRequestError("invalid jwt")
 	}
 
 	claims, _ := j.Claims.(jwt.MapClaims)
 
 	if int64(claims["exp"].(float64)) < time.Now().Unix() {
-		return nil, errors.New("token expired")
+		return nil, response.BadRequestError("token expired")
 	}
 
 	return claims, nil
@@ -91,6 +102,5 @@ func (jm *jwtManager) checkClaims(claims jwt.MapClaims, keys ...string) bool {
 			return false
 		}
 	}
-
 	return true
 }

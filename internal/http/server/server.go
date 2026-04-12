@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"shortivo/internal/config"
+	"shortivo/internal/logger"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 	"go.uber.org/fx"
 )
 
 func NewHTTPServer(
 	lc fx.Lifecycle,
-	cfg config.AppConfig,
+	cfg *config.AppConfig,
 	ge *gin.Engine,
-	log zerolog.Logger,
+	log logger.Logger,
 ) *http.Server {
 
 	srv := &http.Server{
@@ -26,13 +26,16 @@ func NewHTTPServer(
 	lc.Append(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
-				log.Info().
-					Int("listen", cfg.Port).
-					Msg("Starting listener")
+				log.Info(
+					"Starting listener",
+					map[string]any{
+						"listen": cfg.Port,
+					},
+				)
 
 				go func() {
 					if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-						log.Error().Err(err).Msg("http server failed")
+						log.Error("http server failed", err, map[string]any{})
 					}
 				}()
 

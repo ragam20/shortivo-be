@@ -1,0 +1,42 @@
+name: shortivo-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shortivo-postgres-dev
+    restart: no
+    environment:
+      POSTGRES_DB: shortivo_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      TZ: UTC
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - shortivo-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shortivo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: shortivo-redis-dev
+    restart: no
+    ports:
+      - "6379:6379"
+    volumes:
+      - shortivo-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  shortivo-postgres-data:
+  shortivo-redis-data:
