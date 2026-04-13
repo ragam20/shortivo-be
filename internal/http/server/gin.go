@@ -39,7 +39,7 @@ func NewGinEngine(
 
 func isProduction(appEnv string) []string {
 	if appEnv == "production" || appEnv == "prod" {
-		return []string{"https://shortivo-fe.vercel.app/"}
+		return []string{"https://shortivo-fe.vercel.app"}
 	}
 	return []string{"http://localhost:5173"}
 }
