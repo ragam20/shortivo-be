@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"shortivo/internal/config"
 	"shortivo/internal/database/entity"
 
@@ -14,21 +12,21 @@ import (
 )
 
 func NewPostgresConnection(cfg *config.DatabaseConfig, appCfg *config.AppConfig, log appLogger.Logger) (*gorm.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-		cfg.Host,
-		cfg.User,
-		cfg.Password,
-		cfg.Name,
-		cfg.Port,
-		cfg.SSLMode,
-		cfg.TimeZone,
-	)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	gormCfg := &gorm.Config{
 		Logger:         logger.Default.LogMode(logger.Warn),
 		TranslateError: true,
-	})
+	}
+
+	pgConfig := postgres.Config{
+		DSN: cfg.URL,
+	}
+
+	if appCfg.Env == "production" {
+		gormCfg.PrepareStmt = false
+		pgConfig.PreferSimpleProtocol = true
+	}
+
+	db, err := gorm.Open(postgres.New(pgConfig), gormCfg)
 	if err != nil {
 		log.Error("failed to connect database", err, map[string]any{})
 		return nil, err

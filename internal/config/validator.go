@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"net/url"
-	"slices"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -63,34 +62,8 @@ func validateAppConfig(cfg AppConfig, errs *[]string) {
 }
 
 func validateDatabaseConfig(cfg DatabaseConfig, errs *[]string) {
-	if strings.TrimSpace(cfg.Host) == "" {
-		*errs = append(*errs, "database.host is required")
-	}
-
-	if strings.TrimSpace(cfg.User) == "" {
-		*errs = append(*errs, "database.user is required")
-	}
-
-	if cfg.Port <= 0 || cfg.Port > 65535 {
-		*errs = append(*errs, "database.port must be between 1 and 65535")
-	}
-
-	if strings.TrimSpace(cfg.Password) == "" {
-		*errs = append(*errs, "database.password is required")
-	}
-
-	if strings.TrimSpace(cfg.Name) == "" {
-		*errs = append(*errs, "database.name is required")
-	}
-
-	if strings.TrimSpace(cfg.TimeZone) == "" {
-		*errs = append(*errs, "database.time_zone is required")
-	}
-
-	if strings.TrimSpace(strings.ToLower(cfg.SSLMode)) == "" {
-		*errs = append(*errs, "database.sslmode is required")
-	} else if !slices.Contains(validDBSSLModes, cfg.SSLMode) {
-		*errs = append(*errs, "database.sslmode is invalid")
+	if strings.TrimSpace(cfg.URL) == "" {
+		*errs = append(*errs, "database.url is required")
 	}
 }
 
