@@ -39,15 +39,15 @@ func NewHTTPServer(
 		fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				log.Info(
-					"Starting listener",
+					"listening on",
 					map[string]any{
-						"listen": cfg.Port,
+						"port": port,
 					},
 				)
 
 				go func() {
 					if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-						log.Error("http server failed", err, map[string]any{})
+						log.Error("http server failed", err, nil)
 					}
 				}()
 
