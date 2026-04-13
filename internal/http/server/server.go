@@ -20,15 +20,14 @@ func NewHTTPServer(
 	ge *gin.Engine,
 	log logger.Logger,
 ) *http.Server {
-	port := ""
-	if p := os.Getenv("PORT"); p != "" {
-		port = p
+	port := os.Getenv("PORT")
+
+	if port == "" && cfg.Port != 0 {
+		port = strconv.Itoa(cfg.Port)
 	}
 
 	if port == "" {
-		if cfg.Port != 0 {
-			port = strconv.Itoa(cfg.Port)
-		}
+		port = "8000"
 	}
 
 	srv := &http.Server{
