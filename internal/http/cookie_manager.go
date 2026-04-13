@@ -31,7 +31,7 @@ func (m *CookieManager) SetAccessToken(accessToken string, expiredAt time.Time) 
 		Secure:   m.isSecure(),
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -43,7 +43,7 @@ func (m *CookieManager) RevokeAccessToken() *http.Cookie {
 		Secure:   m.isSecure(),
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -57,7 +57,7 @@ func (m *CookieManager) SetRefreshToken(refToken string, expiredAt time.Time) *h
 		Secure:   m.isSecure(),
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -70,7 +70,7 @@ func (m *CookieManager) RevokeRefreshToken() *http.Cookie {
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -82,7 +82,7 @@ func (m *CookieManager) SetGoogleOAuthState(state string) *http.Cookie {
 		Secure:   m.isSecure(),
 		MaxAge:   int((10 * time.Minute).Seconds()),
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -95,7 +95,7 @@ func (m *CookieManager) RevokeGoogleOAuthState() *http.Cookie {
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: m.isSameSite(),
 	}
 }
 
@@ -105,4 +105,11 @@ func GoogleOAuthStateCookieName() string {
 
 func (m *CookieManager) isSecure() bool {
 	return m.appCfg.Env != "development"
+}
+
+func (m *CookieManager) isSameSite() http.SameSite {
+	if m.appCfg.Env == "production" || m.appCfg.Env == "prod" {
+		return http.SameSiteNoneMode
+	}
+	return http.SameSiteLaxMode
 }
