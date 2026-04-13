@@ -20,13 +20,7 @@ type JwtConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	User     string `mapstructure:"user"`
-	Port     int    `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	Name     string `mapstructure:"name"`
-	TimeZone string `mapstructure:"time_zone"`
-	SSLMode  string `mapstructure:"sslmode"`
+	URL string `mapstructure:"url"`
 }
 
 type GoogleOAuthConfig struct {
