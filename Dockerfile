@@ -10,4 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o shortivo_app ./cmd/api/main.go
 FROM alpine:3
 WORKDIR /app
 COPY --from=builder /app/shortivo_app .
+
+EXPOSE 8000
+
 CMD ["/app/shortivo_app"]
