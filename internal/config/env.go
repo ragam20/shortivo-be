@@ -82,12 +82,20 @@ func bindEnvs(v *viper.Viper, keys []string) error {
 func getKeys() []string {
 	return []string{
 		"app.env",
-		"app.port",
-		"app.version",
+		"app.frontend_redirect",
 		"app.log_level",
+		"app.node_id",
+		"app.port",
+		"app.refresh_token_api",
 		"app.request_timeout",
+		"app.shortener_base_url",
+		"app.version",
 
-		"database.url",
+		"db.url",
+
+		"google_oauth.client_id",
+		"google_oauth.client_secret",
+		"google_oauth.redirect",
 
 		"jwt.access_secret",
 		"jwt.expiration",
