@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"shortivo/internal/config"
+	"shortivo/internal/http/limiter"
 	"shortivo/internal/http/middleware"
 
 	"github.com/gin-contrib/cors"
@@ -13,6 +14,7 @@ import (
 func NewGinEngine(
 	requestTimeout *middleware.RequestTimeoutMiddleware,
 	errorHandling *middleware.ErrorMiddleware,
+	requestLimtier *limiter.RequestLimiter,
 	recovery *middleware.RecoveryMiddleware,
 	appConfig *config.AppConfig,
 ) *gin.Engine {
@@ -29,6 +31,7 @@ func NewGinEngine(
 	r.Use(
 		gin.Logger(),
 		recovery.Handle(),
+		requestLimtier.HandleGlobal(),
 		cors,
 		requestTimeout.Handle(),
 		errorHandling.Handle(),

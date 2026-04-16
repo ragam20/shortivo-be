@@ -15,6 +15,7 @@ import (
 	"shortivo/internal/database/repo"
 	appHttp "shortivo/internal/http"
 	"shortivo/internal/http/handler"
+	"shortivo/internal/http/limiter"
 	"shortivo/internal/http/middleware"
 	"shortivo/internal/http/router"
 	"shortivo/internal/http/server"
@@ -54,6 +55,7 @@ func main() {
 
 	appHTTPModule := fx.Module("apphttp",
 		fx.Provide(
+			limiter.NewRequestLimiter,
 			middleware.NewRequestTimeoutMiddleware,
 			middleware.NewErrorMiddleware,
 			middleware.NewRecoveryMiddleware,

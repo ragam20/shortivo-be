@@ -67,3 +67,11 @@ func ForbiddenError(msg string) *AppErrResponse {
 		Timestamp: time.Now().UTC(),
 	}
 }
+
+func TooManyRequestError() *AppErrResponse {
+	return &AppErrResponse{
+		Status:    http.StatusTooManyRequests,
+		Message:   "Too many request",
+		Timestamp: time.Now().UTC(),
+	}
+}
