@@ -22,8 +22,12 @@ func NewEnv() (*Env, error) {
 	appEnv := os.Getenv("APP_ENV")
 
 	configName := ""
-	if appEnv == "" {
+	if appEnv == "" || appEnv == "development" {
 		configName = "development"
+	}
+
+	if appEnv == "production" || appEnv == "prod" {
+		configName = "production"
 	}
 
 	v := viper.New()
