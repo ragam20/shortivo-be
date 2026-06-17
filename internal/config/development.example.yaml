@@ -1,22 +1,16 @@
 app:
-  env: development
+  env:
   version:
-  log_level: debug
-  port: 8000
+  log_level:
+  port:
   node_id:
-  request_timeout: 5s
+  request_timeout:
   shortener_base_url:
   refresh_token_api:
   frontend_redirect:
 
 db:
-  host:
-  port:
-  user:
-  password:
-  name:
-  sslmode:
-  time_zone:
+  url:
 
 jwt:
   access_secret:
