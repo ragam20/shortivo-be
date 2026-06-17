@@ -24,8 +24,22 @@ func NewRoutes(
 		api.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"status":    http.StatusOK,
-				"message":   "pong",
+				"message":   "success",
 				"timestamp": time.Now().UTC(),
+				"data": gin.H{
+					"message": "PONG",
+				},
+			})
+		})
+
+		api.GET("/debug/ip", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"status":    http.StatusOK,
+				"message":   "success",
+				"timestamp": time.Now().UTC(),
+				"data": gin.H{
+					"clientIp": c.ClientIP(),
+				},
 			})
 		})
 
