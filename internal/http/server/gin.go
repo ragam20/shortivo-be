@@ -28,6 +28,12 @@ func NewGinEngine(
 	})
 
 	r := gin.New()
+
+	err := r.SetTrustedProxies([]string{"127.0.0.1"})
+	if err != nil {
+		panic(err)
+	}
+
 	r.Use(
 		gin.Logger(),
 		recovery.Handle(),
